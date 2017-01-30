@@ -12,6 +12,7 @@ Description=""" To perform the greedy algorithm.
 #===============================================================================
 #  Module
 #===============================================================================
+import os
 import time
 import numpy as np
 
@@ -22,8 +23,8 @@ import vectorUtils as vec
 #===============================================================================
 
 def greedy(TSVec_FilePath,
-           orthoNormalRBVec_FilePath = "output/orthonormalRBVec.txt",
-           greedyStdout_FilePath     = "output/greedyStdout.txt",
+           orthoNormalRBVec_FilePath = os.getcwd() + "/output/orthonormalRBVec.txt",
+           greedyStdout_FilePath     = os.getcwd() + "/output/greedyStdout.txt",
            tolerance = 1e-12,
            maxRB     = 1000):
   # Add header to greedyStdout_File
@@ -45,8 +46,8 @@ def greedy(TSVec_FilePath,
   
   # preliminary work
   dimRB = 0
-  error_dimRB = [] # to store the max greedy error at each step
-  RB_index    = [] # to store the index of TS selected to be added to RB
+  error_dimRB = [0.] # to store the max greedy error at each step
+  RB_index    = [0]  # to store the index of TS selected to be added to RB
   maxRB = 1000
   
     # get trainingset size
@@ -54,19 +55,18 @@ def greedy(TSVec_FilePath,
   for sizeTS, none in enumerate(TSVec_File):
     pass
   TSVec_File.close()
-
   # greedy algorithm
   continueToWork = True
   while continueToWork:
     dimRB += 1
     timeSweep_i = time.time()
     # Loop over trainingset/parameters space to calculate errors
-    error_dimRB_tmp = []
+    error_dimRB_tmp = [] # to store the greedy error for each iTS
     TSVec_File = open(TSVec_FilePath, "r")
     for i, iTS in enumerate(TSVec_File):
       # To avoid the same index is being selected twice
       if i in RB_index:
-        break
+        continue
       iTSVec      = vec.vector1D(iTS.split())
       # Loop over the reduced basis to get the error vector
       # In fact, it is modified Gram-Schmidt process
