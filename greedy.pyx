@@ -52,15 +52,15 @@ def greedy(TSVec_FilePath,
   RB_index    = [0]  # to store the index of TS selected to be added to RB
 
   cdef i
-#  RBVec_tmp = vec.vector1D([0.])
-#  cdef double RBVec_tmp_error       = -1.
-#  cdef int    RBVec_tmp_error_index = -1
 
-    # get trainingset size
+  # get trainingset and TSsize
+  TSMatrix = []
   TSVec_File = open(TSVec_FilePath, "r")
-  for sizeTS, none in enumerate(TSVec_File):
-    pass
+  for sizeTS, iTSVec in enumerate(TSVec_File):
+    TSMatrix.append(iTSVec.split())
   TSVec_File.close()
+  sizeTS += 1
+
   # greedy algorithm
   continueToWork = True
   while continueToWork:
@@ -68,12 +68,11 @@ def greedy(TSVec_FilePath,
     timeSweep_i = time.time()
     # Loop over trainingset/parameters space to calculate errors
     error_dimRB_tmp = [] # to store the greedy error for each iTS
-    TSVec_File = open(TSVec_FilePath, "r")
-    for i, iTS in enumerate(TSVec_File):
+    for i in range(sizeTS):
       # To avoid the same index is being selected twice
       if i in RB_index:
         continue
-      iTSVec      = vec.vector1D(iTS.split())
+      iTSVec      = vec.vector1D(TSMatrix[i])
       # Loop over the reduced basis to get the error vector
       # In fact, it is modified Gram-Schmidt process
       orthoNormalRBVec_File = open(orthoNormalRBVec_FilePath, "r")
@@ -93,10 +92,9 @@ def greedy(TSVec_FilePath,
       if max(error_dimRB_tmp) == error_dimRB_tmp[-1]:
         RBVec_tmp             = iTSVec_rej
         RBVec_tmp_error       = error_dimRB_tmp[-1]
-        RBVec_tmp_error_index = i
+        RBVec_tmp_TSindex = i
 
       # Obtain the maximum error, the corresponding paramaters and the orthonormalized vector
-    TSVec_File.close()
 
     # Decide to iterate further or not
     if RBVec_tmp_error < tolerance:
@@ -111,10 +109,6 @@ def greedy(TSVec_FilePath,
       print "Because dimRB = sizeTS = %i" % (dimRB)
       print "Greedy algorithm is finished unfortunately!"
       continueToWork = False
-#    elif RBVec_tmp_error_index in RB_index:
-#      print "Because TS (index = %i) is selected twice as RB" % (RBVec_tmp_error_index)
-#      print "Greedy algorithm is finished unfortunately!"
-#      continueToWork = False
     else:
       # Perform orthonormalization with modified Gram-Schmidt process
       # p.s. In fact, one needs only normalization only.
@@ -125,7 +119,7 @@ def greedy(TSVec_FilePath,
 
       # Save all general information
       error_dimRB.append(RBVec_tmp.norm())
-      RB_index.append(RBVec_tmp_error_index)
+      RB_index.append(RBVec_tmp_TSindex)
 
       timeSweep_f = time.time() - timeSweep_i
       print "%i %i %E %f" % (dimRB, RB_index[-1], error_dimRB[-1], timeSweep_f)
