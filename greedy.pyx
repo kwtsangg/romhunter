@@ -12,6 +12,7 @@ Description=""" To perform the greedy algorithm.
 #===============================================================================
 #  Module
 #===============================================================================
+import cython
 import os
 import time
 import numpy as np
@@ -22,6 +23,7 @@ import vectorUtils as vec
 #  Main
 #===============================================================================
 
+@cython.cdivision(True) 
 def greedy(TSVec_FilePath,
            orthoNormalRBVec_FilePath = os.getcwd() + "/output/orthonormalRBVec.txt",
            greedyStdout_FilePath     = os.getcwd() + "/output/greedyStdout.txt",
@@ -45,11 +47,15 @@ def greedy(TSVec_FilePath,
   orthoNormalRBVec_File.close()
   
   # preliminary work
-  dimRB = 0
+  cdef int dimRB = 0
   error_dimRB = [0.] # to store the max greedy error at each step
   RB_index    = [0]  # to store the index of TS selected to be added to RB
-  maxRB = 1000
-  
+
+  cdef i
+#  RBVec_tmp = vec.vector1D([0.])
+#  cdef double RBVec_tmp_error       = -1.
+#  cdef int    RBVec_tmp_error_index = -1
+
     # get trainingset size
   TSVec_File = open(TSVec_FilePath, "r")
   for sizeTS, none in enumerate(TSVec_File):
@@ -72,7 +78,7 @@ def greedy(TSVec_FilePath,
       # In fact, it is modified Gram-Schmidt process
       orthoNormalRBVec_File = open(orthoNormalRBVec_FilePath, "r")
       for jRB in orthoNormalRBVec_File:
-        iTSVec = iTSVec.rejection(vec.vector1D(jRB.split()))
+        iTSVec = iTSVec.rejectionUnitVector(vec.vector1D(jRB.split()))
       orthoNormalRBVec_File.close()
       # Now iTSVec is the orthogonal vector to RB
       # To avoid confusion, we define iTSVec_rej redundantly.
@@ -87,7 +93,7 @@ def greedy(TSVec_FilePath,
       if max(error_dimRB_tmp) == error_dimRB_tmp[-1]:
         RBVec_tmp             = iTSVec_rej
         RBVec_tmp_error       = error_dimRB_tmp[-1]
-        RBVec_tmp_error_index = len(error_dimRB_tmp)-1
+        RBVec_tmp_error_index = i
 
       # Obtain the maximum error, the corresponding paramaters and the orthonormalized vector
     TSVec_File.close()
