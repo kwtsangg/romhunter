@@ -16,89 +16,70 @@ import cython
 import os
 import time
 import numpy as np
+import multiprocessing as mp
 
 import vectorUtils as vec
 
 #===============================================================================
 #  Main
 #===============================================================================
-
 @cython.cdivision(True) 
-def greedy(TSVec_FilePath,
-           orthoNormalRBVec_FilePath = os.getcwd() + "/output/orthonormalRBVec.txt",
-           greedyStdout_FilePath     = os.getcwd() + "/output/greedyStdout.txt",
-           tolerance = 1e-12,
-           maxRB     = 1000):
+cpdef greedy(
+             TSVec_FilePath,
+             orthoNormalRBVec_FilePath = os.getcwd() + "/output/orthonormalRBVec.txt",
+             greedyStdout_FilePath     = os.getcwd() + "/output/greedyStdout.txt",
+             tolerance = 1e-12,
+             maxRB     = 1000
+             ):
   # Add header to greedyStdout_File
-  print "#1 dimRB #2 TSIndex #3 Error #4 timeSweep(s)"
-  print "%i %i %E %f" % (0, 0, 0., 0.)
-  greedyStdout_File = open(greedyStdout_FilePath, "w+")
-  greedyStdout_File.write("#1 dimRB #2 TSIndex #3 Error #4 timeSweep\n")
-  greedyStdout_File.write("%i %i %E %f\n" % (0, 0, 0., 0.))
-  greedyStdout_File.close()
-
-  # Choose an arbitrary seed choice, here the first vector in TS is chosen.
-  TSVec_File = open(TSVec_FilePath, "r")
-  RBVec_tmp = vec.vector1D(TSVec_File.readline().split())
-  TSVec_File.close()
-
-  orthoNormalRBVec_File = open(orthoNormalRBVec_FilePath, "w+")
-  orthoNormalRBVec_File.write(RBVec_tmp.unitVector().printComponent())
-  orthoNormalRBVec_File.close()
-  
-  # preliminary work
-  cdef int dimRB = 0
-  error_dimRB = [0.] # to store the max greedy error at each step
-  RB_index    = [0]  # to store the index of TS selected to be added to RB
-
-  cdef i
+  printAndWrite(greedyStdout_FilePath, "w+", "#1 dimRB #2 TSIndex #3 Error #4 timeSweep(s)")
+  printAndWrite(greedyStdout_FilePath, "a", "%i %i %E %f" % (0, 0, 0., 0.))
 
   # get trainingset and TSsize
   TSMatrix = []
   TSVec_File = open(TSVec_FilePath, "r")
   for sizeTS, iTSVec in enumerate(TSVec_File):
-    TSMatrix.append(iTSVec.split())
+    TSMatrix.append(vec.vector1D(iTSVec.split()))
   TSVec_File.close()
   sizeTS += 1
+
+  # Choose an arbitrary seed choice, here the first vector in TS is chosen.
+  RBMatrix = []
+  RBMatrix.append(TSMatrix[0].unitVector())
+
+  orthoNormalRBVec_File = open(orthoNormalRBVec_FilePath, "w+")
+  orthoNormalRBVec_File.write(RBMatrix[-1].printComponent())
+  orthoNormalRBVec_File.close()
+  
+  # preliminary work
+  cdef int i
+  cdef int dimRB = 0
+  error_dimRB     = [0.]        # to store the max greedy error at each step
+  error_dimRB_tmp = [0.]*sizeTS # to store the greedy error for each iTS
+  RB_index        = [0]         # to store the index of TS selected to be added to RB
 
   # greedy algorithm
   continueToWork = True
   while continueToWork:
     dimRB += 1
     timeSweep_i = time.time()
-    # Loop over trainingset/parameters space to calculate errors
-    error_dimRB_tmp = [] # to store the greedy error for each iTS
-    for i in range(sizeTS):
-      # To avoid the same index is being selected twice
+    # Use the last reduced basis to update the error vector
+    # In fact, it is called modified Gram-Schmidt process
+    for i in xrange(sizeTS):
+      # To avoid the same index being selected twice
       if i in RB_index:
+        error_dimRB_tmp[i] = 0.
         continue
-      iTSVec      = vec.vector1D(TSMatrix[i])
-      # Loop over the reduced basis to get the error vector
-      # In fact, it is modified Gram-Schmidt process
-      orthoNormalRBVec_File = open(orthoNormalRBVec_FilePath, "r")
-      for jRB in orthoNormalRBVec_File:
-        iTSVec = iTSVec.rejectionUnitVector(vec.vector1D(jRB.split()))
-      orthoNormalRBVec_File.close()
-      # Now iTSVec is the orthogonal vector to RB
-      # To avoid confusion, we define iTSVec_rej redundantly.
-      iTSVec_rej = iTSVec
+      TSMatrix[i] = TSMatrix[i].rejectionUnitVector(RBMatrix[-1])
+      error_dimRB_tmp[i] = TSMatrix[i].norm()
 
-      error_dimRB_tmp.append( iTSVec_rej.norm() )
-#      print "%i th TS , greedy error = %f." % (i, error_dimRB_tmp[-1])
-#      print "              max error = %f." % ( max(error_dimRB_tmp) )
-#      print "           iTSVec_rej   = %s." % iTSVec_rej.printComponent()
-#      print "       iTSVec_rej.norm()= %f." % iTSVec_rej.norm()
-#      print " iTSVec_rej.unitVector()= %s." % iTSVec_rej.unitVector().printComponent()
-      if max(error_dimRB_tmp) == error_dimRB_tmp[-1]:
-        RBVec_tmp             = iTSVec_rej
-        RBVec_tmp_error       = error_dimRB_tmp[-1]
-        RBVec_tmp_TSindex = i
-
-      # Obtain the maximum error, the corresponding paramaters and the orthonormalized vector
+    RB_index.append(np.argmax(error_dimRB_tmp))
+    error_dimRB.append(error_dimRB_tmp[RB_index[-1]])
+    RBMatrix.append(TSMatrix[RB_index[-1]].unitVector())
 
     # Decide to iterate further or not
-    if RBVec_tmp_error < tolerance:
-      print "Because error = %E < tolerance = %E" % (RBVec_tmp_error, tolerance)
+    if error_dimRB[-1] < tolerance:
+      print "Because error = %E < tolerance = %E" % (error_dimRB[-1], tolerance)
       print "Greedy algorithm is finished successfully!"
       continueToWork = False
     elif dimRB == maxRB:
@@ -114,17 +95,16 @@ def greedy(TSVec_FilePath,
       # p.s. In fact, one needs only normalization only.
       # Save the orthonormalized resultant basis vector
       orthoNormalRBVec_File = open(orthoNormalRBVec_FilePath, "a")
-      orthoNormalRBVec_File.write(RBVec_tmp.unitVector().printComponent())
+      orthoNormalRBVec_File.write(RBMatrix[-1].printComponent())
       orthoNormalRBVec_File.close() 
 
-      # Save all general information
-      error_dimRB.append(RBVec_tmp.norm())
-      RB_index.append(RBVec_tmp_TSindex)
-
+      # Print and Save all general information
       timeSweep_f = time.time() - timeSweep_i
-      print "%i %i %E %f" % (dimRB, RB_index[-1], error_dimRB[-1], timeSweep_f)
-      greedyStdout_File = open(greedyStdout_FilePath, "a")
-      greedyStdout_File.write("%i %i %E %f\n" % (dimRB, RB_index[-1], error_dimRB[-1], timeSweep_f))
-      greedyStdout_File.close()
+      printAndWrite(greedyStdout_FilePath, "a", "%i %i %E %f" % (dimRB, RB_index[-1], error_dimRB[-1], timeSweep_f))
 
+def printAndWrite(filePath, mode, strToBeSaved):
+  print strToBeSaved
+  f = open(filePath, mode)
+  f.write(strToBeSaved)
+  f.close()
 

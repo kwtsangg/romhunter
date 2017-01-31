@@ -27,7 +27,7 @@ class vector1D():
     self.dim       = len(listA)
     self.component = [0.]*self.dim
     cdef int i
-    for i in range(self.dim):
+    for i in xrange(self.dim):
       self.component[i] = float(listA[i])
       if abs(self.component[i]) < self.tolerance:
         self.component[i] = 0.
@@ -38,7 +38,7 @@ class vector1D():
     cdef int i
     assert self.dim == other.dim
     result = [0.]*self.dim
-    for i in range(self.dim):
+    for i in xrange(self.dim):
       result[i] = self.component[i] + other.component[i]
     return vector1D(result)
   # vector subtraction
@@ -47,7 +47,7 @@ class vector1D():
     cdef int i
     assert self.dim == other.dim
     result = [0.]*self.dim
-    for i in range(0, self.dim):
+    for i in xrange(0, self.dim):
       result[i] = self.component[i] - other.component[i]
     return vector1D(result)
 
@@ -62,7 +62,7 @@ class vector1D():
   def scalarMul(self, a):
     result = [0.]*self.dim
     cdef int i
-    for i in range(self.dim):
+    for i in xrange(self.dim):
       result[i] = self.component[i] * float(a)
     return vector1D(result)
   @cython.cdivision(True) 
@@ -70,7 +70,7 @@ class vector1D():
     cdef double result = 0.
     cdef int i
     assert self.dim == other.dim
-    for i in range(self.dim):
+    for i in xrange(self.dim):
       result += self.component[i] * other.component[i]
     return result
   @cython.cdivision(True) 
@@ -97,7 +97,7 @@ class vector1D():
   # Other function
   def printComponent(self):
     result = ""
-    for i in range(self.dim):
+    for i in xrange(self.dim):
       result += str(self.component[i]) + " "
     result = result[:-1] + "\n"
     return result
