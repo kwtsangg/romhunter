@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-__file__       = "vectorUtils.py"
+__file__       = "vectorUtils.pyx"
 __author__     = "Ka Wa Tsang"
 __copyright__  = "Copyright 2017"
 __version__    = "1.0.1"
@@ -13,6 +13,7 @@ Description=""" Useful functions for manipulations of vectors.
 #  Module
 #===============================================================================
 import cython
+from gwhunter.utils.generalPythonFunc import printf
 
 cdef extern from "math.h":
   double sqrt(double number)
@@ -20,7 +21,15 @@ cdef extern from "math.h":
 #===============================================================================
 #  Main
 #===============================================================================
-class vector1D():
+
+"""
+  Input: a list of complex number
+"""
+cdef class vector1D(object):
+  cpdef public double tolerance
+  cpdef public int    dim
+  cpdef public list   component
+
   @cython.cdivision(True) 
   def __init__(self, listA):
     self.tolerance = 1e-20
@@ -28,11 +37,10 @@ class vector1D():
     self.component = [0.]*self.dim
     cdef int i
     for i in xrange(self.dim):
-      self.component[i] = float(listA[i])
-      if abs(self.component[i]) < self.tolerance:
-        self.component[i] = 0.
+      self.component[i] = complex(listA[i])
+
   # Operator definition
-  # vector addition
+  # elementwise addition
   @cython.cdivision(True) 
   def __add__(self, other):
     cdef int i
@@ -41,58 +49,118 @@ class vector1D():
     for i in xrange(self.dim):
       result[i] = self.component[i] + other.component[i]
     return vector1D(result)
-  # vector subtraction
+  # elementwise subtraction
   @cython.cdivision(True) 
   def __sub__(self, other):
     cdef int i
     assert self.dim == other.dim
     result = [0.]*self.dim
-    for i in xrange(0, self.dim):
+    for i in xrange(self.dim):
       result[i] = self.component[i] - other.component[i]
+    return vector1D(result)
+  # elementwise multiplication
+  @cython.cdivision(True) 
+  def __mul__(self, other):
+    cdef int i
+    assert self.dim == other.dim
+    result = [0.]*self.dim
+    for i in xrange(self.dim):
+      result[i] = self.component[i] * other.component[i]
+    return vector1D(result)
+  # elementwise division
+  @cython.cdivision(True) 
+  def __div__(self, other):
+    cdef int i
+    assert self.dim == other.dim
+    result = [0.]*self.dim
+    for i in xrange(self.dim):
+      result[i] = self.component[i] / other.component[i]
     return vector1D(result)
 
   # General function
   @cython.cdivision(True) 
-  def add(self, a):
-    return self + vector1D(self.dim*[a])
-  @cython.cdivision(True) 
-  def sub(self, a):
-    return self - vector1D(self.dim*[a])
-  @cython.cdivision(True) 
-  def scalarMul(self, a):
-    result = [0.]*self.dim
+  def conj(self):
     cdef int i
+    result = [0.]*self.dim
     for i in xrange(self.dim):
-      result[i] = self.component[i] * float(a)
+      result[i] = self.component[i].conjugate()
     return vector1D(result)
   @cython.cdivision(True) 
+  def add(self, a):
+    cdef int i
+    result = [0.]*self.dim
+    a = complex(a)
+    for i in xrange(self.dim):
+      result[i] = self.component[i] + a
+    return vector1D(result)
+  @cython.cdivision(True) 
+  def sub(self, a):
+    cdef int i
+    result = [0.]*self.dim
+    a = complex(a)
+    for i in xrange(self.dim):
+      result[i] = self.component[i] - a
+    return vector1D(result)
+  @cython.cdivision(True) 
+  def mul(self, a):
+    cdef int i
+    result = [0.]*self.dim
+    a = complex(a)
+    for i in xrange(self.dim):
+      result[i] = self.component[i] * a
+    return vector1D(result)
+  @cython.cdivision(True) 
+  def div(self, a):
+    cdef int i
+    result = [0.]*self.dim
+    a = complex(a)
+    for i in xrange(self.dim):
+      result[i] = self.component[i] / a
+    return vector1D(result)
+
+  @cython.cdivision(True) 
   def innerProduct(self, other):
-    cdef double result = 0.
+    cdef complex result = 0.
     cdef int i
     assert self.dim == other.dim
     for i in xrange(self.dim):
-      result += self.component[i] * other.component[i]
+      result += (self.component[i]).conjugate() * other.component[i]
     return result
   @cython.cdivision(True) 
   def norm(self):
-    return sqrt(self.innerProduct(self))
+    cdef double result = 0.
+    cdef double component = 0.
+    cdef int i
+    for i in xrange(self.dim):
+      component = abs(self.component[i])
+      result += component*component
+    return sqrt(result)
   @cython.cdivision(True) 
   def unitVector(self):
     if self.norm() < self.tolerance:
+      printf("Cannot normalize an unit vector. Keeping it as null vector ...", __file__, "warning")
       return vector1D([0.]*self.dim)
-    return self.scalarMul(1./self.norm())
+    return self.div(self.norm())
+
+  @cython.cdivision(True) 
+  def projectionCoeff(self, other):
+    return self.innerProduct(other)/other.innerProduct(other)
   @cython.cdivision(True) 
   def projection(self, other):
-    return other.scalarMul(self.innerProduct(other)/other.innerProduct(other))
+    return other.mul(self.projectionCoeff(other))
   @cython.cdivision(True) 
   def rejection(self, other):
     return self - self.projection(other)
+
   @cython.cdivision(True) 
-  def projectionUnitVector(self, other):
-    return other.scalarMul(self.innerProduct(other))
+  def projectionCoeffOnUnitVector(self, other):
+    return self.innerProduct(other)
   @cython.cdivision(True) 
-  def rejectionUnitVector(self, other):
-    return self - self.projectionUnitVector(other)
+  def projectionOnUnitVector(self, other):
+    return other.mul(self.innerProduct(other))
+  @cython.cdivision(True) 
+  def rejectionOnUnitVector(self, other):
+    return self - self.projectionOnUnitVector(other)
 
   # Other function
   def printComponent(self):
