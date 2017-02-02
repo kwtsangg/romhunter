@@ -90,3 +90,17 @@ def evaluateModelTag(iTSList, modelTag):
     printf("In evaluateModelTag, the modelTag (%s) is not supported. Exiting...", __file__, "error")
     sys.exit()
 
+"""
+  Input:
+    TSVec_FilePath : a file containing the vector
+  Output:
+    TSMatrix          : a list of vec.vector1D (defined in vectorUtils.py)
+"""
+def getFromFile(TSVec_FilePath):
+  TSMatrix = []
+  TSVec_File = open(TSVec_FilePath, "r")
+  for iTSVec in TSVec_File:
+    TSMatrix.append(vec.vector1D(iTSVec.split()))
+  TSVec_File.close()
+  return TSMatrix
+

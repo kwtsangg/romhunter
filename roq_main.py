@@ -26,16 +26,18 @@ def main():
   # get input values from the config
 
   # setup the training set
-  freqList = np.linspace(20,1024,8033)
-  weight = (1024.-20.)/(8033.-1.)
-  weight = vec.vector1D([weight]*8033)
-  TSParams_FilePath = "/home/kwtsang/romhunter/input/SmithEtAlBases/GreedyPoints_8s.txt"
+  freqList = np.linspace(20,1024,4017)
+  weight = 1.
+  weight = 0.25
+  TSParams_FilePath = "/home/kwtsang/romhunter/input/SmithEtAlBases/GreedyPoints_4s.txt"
   orthoNormalRBVec_FilePath = "/home/kwtsang/romhunter/output/orthonormalRBVec.txt"
   greedyStdout_FilePath = "/home/kwtsang/romhunter/output/greedyStdout.txt"
   tolerance = 1e-12
   maxRB = 5000
 
-  TSMatrix = ts.evaluateModel(freqList, TSParams_FilePath, "IMRPhenomPv2FD", "hphp")
+  TSVec_FilePath = "/home/kwtsang/romhunter/input/TS_testing.txt"
+  TSMatrix = ts.evaluateModel(freqList, TSParams_FilePath, "IMRPhenomPv2FD", "hp")
+#  TSMatrix = ts.getFromFile(TSVec_FilePath)
 
   # greedy algorithm
   gd.generateRB(TSMatrix, weight, orthoNormalRBVec_FilePath, greedyStdout_FilePath, tolerance, maxRB)

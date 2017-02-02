@@ -44,7 +44,7 @@ cpdef generateRB(
   # preliminary work
   cdef int i # for looping the TS
   cdef int j # for IMGS
-  cdef int dimRB  = 0
+  cdef int dimRB  = 1
   error_dimRB     = [1.]        # to store the max greedy error at each step
   error_dimRB_tmp = [0.]*sizeTS # to store the greedy error for each iTS
   RB_index        = [0]         # to store the index of TS selected to be added to RB
@@ -57,11 +57,8 @@ cpdef generateRB(
   orthoNormalRBVec_File.write(RBMatrix[-1].printComponent())
   orthoNormalRBVec_File.close()
 
-  # Add header to greedyStdout_File
-  printAndWrite(greedyStdout_FilePath, "w+", "#1 dimRB #2 TSIndex #3 Error #4 timeSweep(s)")
-
   # Initial info printing and saving
-  printAndWrite(greedyStdout_FilePath, "a", "%i %i %E %E" % (dimRB, RB_index[-1], error_dimRB[-1], 0.))
+  printAndWrite(greedyStdout_FilePath, "a", "dimRB %i | TSIndex %i | GreedyError %E | timeSweep(s) %E" % (dimRB, RB_index[-1], error_dimRB[-1], 0.))
 
   # greedy algorithm
   continueToWork = True
@@ -96,14 +93,13 @@ cpdef generateRB(
       norm_old = 1.
       continueToMGS = True
       while continueToMGS:
-        for j in xrange(dimRB):
+        for j in xrange(dimRB-1):
           RBVec_add = RBVec_add.rejection(RBMatrix[j], weight)
         norm_new = RBVec_add.norm()
         if norm_new/norm_old < 0.8:
           norm_old = norm_new
         else:
           continueToMGS = False
-
       RBMatrix.append(RBVec_add.unitVector(weight))
 
       # Save the orthonormalized resultant basis vector
@@ -113,7 +109,7 @@ cpdef generateRB(
 
       # Print and Save all general information
       timeSweep_f = time.time() - timeSweep_i
-      printAndWrite(greedyStdout_FilePath, "a", "%i %i %E %E" % (dimRB, RB_index[-1], error_dimRB[-1], timeSweep_f))
+      printAndWrite(greedyStdout_FilePath, "a", "dimRB %i | TSIndex %i | GreedyError %E | timeSweep(s) %E" % (dimRB, RB_index[-1], error_dimRB[-1], timeSweep_f))
 
 def printAndWrite(filePath, mode, strToBeSaved):
   print strToBeSaved

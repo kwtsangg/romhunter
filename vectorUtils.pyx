@@ -125,15 +125,15 @@ cdef class vector1D(object):
     assert self.dim == other.dim
     if weight == None:
       for i in xrange(self.dim):
-        result += self.component[i].conjugate() * other.component[i]
+        result += self.component[i] * other.component[i].conjugate()
     elif isinstance(weight, (int, float, complex)):
       for i in xrange(self.dim):
-        result += self.component[i].conjugate() * other.component[i]
+        result += self.component[i] * other.component[i].conjugate()
       result *= weight
     else:
       assert weight.dim == self.dim
       for i in xrange(self.dim):
-        result += weight.component[i] * self.component[i].conjugate() * other.component[i]
+        result += weight.component[i] * self.component[i] * other.component[i].conjugate()
     return result
 
   @cython.cdivision(True) 
