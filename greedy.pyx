@@ -25,36 +25,40 @@ import vectorUtils as vec
 @cython.cdivision(True) 
 cpdef generateRB(
                  TSMatrix,
+                 weight,
                  orthoNormalRBVec_FilePath,
                  greedyStdout_FilePath,
                  tolerance = 1e-12,
                  maxRB = 5000,
                  ):
-  # Add header to greedyStdout_File
-  printAndWrite(greedyStdout_FilePath, "w+", "#1 dimRB #2 TSIndex #3 Error #4 timeSweep(s)")
 
-  # Choose an arbitrary seed choice, here the first vector in TS is chosen.
-  RBMatrix = []
-  RBMatrix.append(TSMatrix[0].unitVector())
+  # Normalize TS and get the size of TS
+  cdef int sizeTS = len(TSMatrix)
+  TSNorm2   = [0.] * sizeTS
+  ProjNorm2 = [0.] * sizeTS
+  cdef int jj
+  for jj in xrange(sizeTS):
+    TSMatrix[jj] = TSMatrix[jj].unitVector(weight)
+    TSNorm2[jj]  = TSMatrix[jj].norm(weight)
 
-  orthoNormalRBVec_File = open(orthoNormalRBVec_FilePath, "w+")
-  orthoNormalRBVec_File.write(RBMatrix[-1].printComponent())
-  orthoNormalRBVec_File.close()
-  
   # preliminary work
   cdef int i # for looping the TS
   cdef int j # for IMGS
   cdef int dimRB  = 0
-  cdef int sizeTS = len(TSMatrix)
   error_dimRB     = [1.]        # to store the max greedy error at each step
   error_dimRB_tmp = [0.]*sizeTS # to store the greedy error for each iTS
   RB_index        = [0]         # to store the index of TS selected to be added to RB
 
-  TSNorm2   = [0.] * sizeTS
-  ProjNorm2 = [0.] * sizeTS
-  cdef int ii
-  for ii in xrange(sizeTS):
-    TSNorm2[ii]   = TSMatrix[ii].norm()
+  # Choose an arbitrary seed choice, here the first vector in TS is chosen.
+  RBMatrix = []
+  RBMatrix.append(TSMatrix[0].unitVector(weight))
+
+  orthoNormalRBVec_File = open(orthoNormalRBVec_FilePath, "w+")
+  orthoNormalRBVec_File.write(RBMatrix[-1].printComponent())
+  orthoNormalRBVec_File.close()
+
+  # Add header to greedyStdout_File
+  printAndWrite(greedyStdout_FilePath, "w+", "#1 dimRB #2 TSIndex #3 Error #4 timeSweep(s)")
 
   # Initial info printing and saving
   printAndWrite(greedyStdout_FilePath, "a", "%i %i %E %E" % (dimRB, RB_index[-1], error_dimRB[-1], 0.))
@@ -67,7 +71,7 @@ cpdef generateRB(
     # Use the last reduced basis to update the error vector
     # In fact, it is called modified Gram-Schmidt process
     for i in xrange(sizeTS):
-      Projcoeff = TSMatrix[i].innerProduct(RBMatrix[-1])
+      Projcoeff = TSMatrix[i].innerProduct(RBMatrix[-1], weight)
       ProjNorm2[i] += abs(Projcoeff)**2
       error_dimRB_tmp[i] = TSNorm2[i] - ProjNorm2[i]
     RB_index.append(np.argmax(error_dimRB_tmp))
@@ -93,14 +97,14 @@ cpdef generateRB(
       continueToMGS = True
       while continueToMGS:
         for j in xrange(dimRB):
-          RBVec_add = RBVec_add.rejection(RBMatrix[j])
+          RBVec_add = RBVec_add.rejection(RBMatrix[j], weight)
         norm_new = RBVec_add.norm()
-        if norm_new/norm_old < 0.5:
+        if norm_new/norm_old < 0.8:
           norm_old = norm_new
         else:
           continueToMGS = False
 
-      RBMatrix.append(RBVec_add.unitVector())
+      RBMatrix.append(RBVec_add.unitVector(weight))
 
       # Save the orthonormalized resultant basis vector
       orthoNormalRBVec_File = open(orthoNormalRBVec_FilePath, "a")

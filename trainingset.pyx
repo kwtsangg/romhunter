@@ -57,35 +57,35 @@ def evaluateModelTag(iTSList, modelTag):
   # hp
   if modelTag == "hp":
     iTSVechp = vec.vector1D(iTSList[0])
-    return iTSVechp.unitVector()
+    return iTSVechp
   # hc
   elif modelTag == "hc":
     iTSVechc = vec.vector1D(iTSList[1])
-    return iTSVechc.unitVector()
+    return iTSVechc
   # hp * conj(hp)
   elif modelTag == "hphp":
     iTSVechp = vec.vector1D(iTSList[0])
-    return (iTSVechp*(iTSVechp.conj())).unitVector()
+    return iTSVechp*(iTSVechp.conj())
   # hp * conj(hc)
   elif modelTag == "hphc":
     iTSVechp = vec.vector1D(iTSList[0])
     iTSVechc = vec.vector1D(iTSList[1])
-    return (iTSVechp*(iTSVechc.conj())).unitVector()
+    return iTSVechp*(iTSVechc.conj())
   # hc * conj(hp)
   elif modelTag == "hchp":
     iTSVechp = vec.vector1D(iTSList[0])
     iTSVechc = vec.vector1D(iTSList[1])
-    return (iTSVechc*(iTSVechp.conj())).unitVector()
+    return iTSVechc*(iTSVechp.conj())
   # hc * conj(hc)
   elif modelTag == "hchc":
     iTSVechc = vec.vector1D(iTSList[1])
-    return (iTSVechc*(iTSVechc.conj())).unitVector()
+    return iTSVechc*(iTSVechc.conj())
   # (hp+hc) * conj(hp+hc)
   elif modelTag == "hpPLUShcSquared":
     iTSVechp = vec.vector1D(iTSList[0])
     iTSVechc = vec.vector1D(iTSList[1])
     iTSVechpPLUShc = iTSVechp + iTSVechc
-    return (iTSVechpPLUShc*(iTSVechpPLUShc.conj())).unitVector()
+    return iTSVechpPLUShc*(iTSVechpPLUShc.conj())
   else:
     printf("In evaluateModelTag, the modelTag (%s) is not supported. Exiting...", __file__, "error")
     sys.exit()

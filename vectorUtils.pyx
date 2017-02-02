@@ -16,7 +16,7 @@ import cython
 from gwhunter.utils.generalPythonFunc import printf
 
 cdef extern from "math.h":
-  double sqrt(double number)
+  double sqrt(double)
 
 #===============================================================================
 #  Main
@@ -32,7 +32,7 @@ cdef class vector1D(object):
 
   @cython.cdivision(True) 
   def __init__(self, listA):
-    self.tolerance = 1e-20
+    self.tolerance = 1e-30
     self.dim       = len(listA)
     self.component = [0.]*self.dim
     cdef int i
@@ -119,48 +119,52 @@ cdef class vector1D(object):
     return vector1D(result)
 
   @cython.cdivision(True) 
-  def innerProduct(self, other):
-    cdef complex result = 0.
+  def innerProduct(self, other, weight = None):
     cdef int i
+    cdef complex result = 0.j
     assert self.dim == other.dim
-    for i in xrange(self.dim):
-      result += (self.component[i]).conjugate() * other.component[i]
+    if weight == None:
+      for i in xrange(self.dim):
+        result += self.component[i].conjugate() * other.component[i]
+    elif isinstance(weight, (int, float, complex)):
+      for i in xrange(self.dim):
+        result += self.component[i].conjugate() * other.component[i]
+        result *= weight
+    else:
+      assert weight.dim == self.dim
+      for i in xrange(self.dim):
+        result += weight.component[i] * self.component[i].conjugate() * other.component[i]
     return result
+
   @cython.cdivision(True) 
-  def norm(self):
-    cdef double result = 0.
-    cdef double component = 0.
-    cdef int i
-    for i in xrange(self.dim):
-      component = abs(self.component[i])
-      result += component*component
-    return sqrt(result)
+  def norm(self, weight = None):
+    return sqrt(abs(self.innerProduct(self, weight)))
   @cython.cdivision(True) 
-  def unitVector(self):
-    if self.norm() < self.tolerance:
+  def unitVector(self, weight = None):
+    if self.norm(weight) < self.tolerance:
       printf("Cannot normalize an unit vector. Keeping it as null vector ...", __file__, "warning")
       return vector1D([0.]*self.dim)
-    return self.div(self.norm())
+    return self.div(self.norm(weight))
 
   @cython.cdivision(True) 
-  def projectionCoeff(self, other):
-    return self.innerProduct(other)/other.innerProduct(other)
+  def projectionCoeff(self, other, weight = None):
+    return self.innerProduct(other,weight)/other.innerProduct(other, weight)
   @cython.cdivision(True) 
-  def projection(self, other):
-    return other.mul(self.projectionCoeff(other))
+  def projection(self, other, weight = None):
+    return other.mul(self.projectionCoeff(other, weight))
   @cython.cdivision(True) 
-  def rejection(self, other):
-    return self - self.projection(other)
+  def rejection(self, other, weight = None):
+    return self - self.projection(other, weight)
 
   @cython.cdivision(True) 
-  def projectionCoeffOnUnitVector(self, other):
-    return self.innerProduct(other)
+  def projectionCoeffOnUnitVector(self, other, weight = None):
+    return self.innerProduct(other, weight)
   @cython.cdivision(True) 
-  def projectionOnUnitVector(self, other):
-    return other.mul(self.innerProduct(other))
+  def projectionOnUnitVector(self, other, weight = None):
+    return other.mul(self.innerProduct(other, weight))
   @cython.cdivision(True) 
-  def rejectionOnUnitVector(self, other):
-    return self - self.projectionOnUnitVector(other)
+  def rejectionOnUnitVector(self, other, weight = None):
+    return self - self.projectionOnUnitVector(other, weight)
 
   # Other function
   def printComponent(self):
