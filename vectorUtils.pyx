@@ -129,7 +129,7 @@ cdef class vector1D(object):
     elif isinstance(weight, (int, float, complex)):
       for i in xrange(self.dim):
         result += self.component[i].conjugate() * other.component[i]
-        result *= weight
+      result *= weight
     else:
       assert weight.dim == self.dim
       for i in xrange(self.dim):
