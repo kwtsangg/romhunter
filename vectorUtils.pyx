@@ -23,7 +23,8 @@ cdef extern from "math.h":
 #===============================================================================
 
 """
-  Input: a list of complex number
+  Input:
+    a list of complex number
 """
 cdef class vector1D(object):
   cpdef public double tolerance
@@ -118,6 +119,10 @@ cdef class vector1D(object):
       result[i] = self.component[i] / a
     return vector1D(result)
 
+  # Vector operation
+  """
+    Physicist conversion is used here. Inner product <a|b> = sum a* b.
+  """
   @cython.cdivision(True) 
   def innerProduct(self, other, weight = None):
     cdef int i
@@ -125,20 +130,23 @@ cdef class vector1D(object):
     assert self.dim == other.dim
     if weight == None:
       for i in xrange(self.dim):
-        result += self.component[i] * other.component[i].conjugate()
+        result += self.component[i].conjugate() * other.component[i]
     elif isinstance(weight, (int, float, complex)):
       for i in xrange(self.dim):
-        result += self.component[i] * other.component[i].conjugate()
+        result += self.component[i].conjugate() * other.component[i]
       result *= weight
     else:
       assert weight.dim == self.dim
       for i in xrange(self.dim):
-        result += weight.component[i] * self.component[i] * other.component[i].conjugate()
+        result += weight.component[i] * self.component[i].conjugate() * other.component[i]
     return result
 
   @cython.cdivision(True) 
   def norm(self, weight = None):
     return sqrt(abs(self.innerProduct(self, weight)))
+  @cython.cdivision(True)
+  def norm2(self, weight = None):
+    return abs(self.innerProduct(self, weight))
   @cython.cdivision(True) 
   def unitVector(self, weight = None):
     if self.norm(weight) < self.tolerance:
@@ -146,9 +154,12 @@ cdef class vector1D(object):
       return vector1D([0.]*self.dim)
     return self.div(self.norm(weight))
 
+  """
+    The projection coefficient for vector a projected on vector b is defined to be <b|a>/<b|b>.
+  """
   @cython.cdivision(True) 
   def projectionCoeff(self, other, weight = None):
-    return self.innerProduct(other,weight)/other.innerProduct(other, weight)
+    return other.innerProduct(self,weight)/other.innerProduct(other, weight)
   @cython.cdivision(True) 
   def projection(self, other, weight = None):
     return other.mul(self.projectionCoeff(other, weight))
@@ -158,7 +169,7 @@ cdef class vector1D(object):
 
   @cython.cdivision(True) 
   def projectionCoeffOnUnitVector(self, other, weight = None):
-    return self.innerProduct(other, weight)
+    return other.innerProduct(self, weight)
   @cython.cdivision(True) 
   def projectionOnUnitVector(self, other, weight = None):
     return other.mul(self.innerProduct(other, weight))

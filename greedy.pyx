@@ -15,6 +15,7 @@ Description=""" To perform the greedy algorithm.
 import cython
 import time
 import numpy as np
+cimport numpy as np
 import multiprocessing as mp
 
 import vectorUtils as vec
@@ -22,6 +23,7 @@ import vectorUtils as vec
 #===============================================================================
 #  Main
 #===============================================================================
+
 @cython.cdivision(True) 
 cpdef generateRB(
                  TSMatrix,
@@ -36,15 +38,14 @@ cpdef generateRB(
   cdef int sizeTS = len(TSMatrix)
   TSNorm2   = [0.] * sizeTS
   ProjNorm2 = [0.] * sizeTS
-  cdef int jj
-  for jj in xrange(sizeTS):
-    TSMatrix[jj] = TSMatrix[jj].unitVector(weight)
-    TSNorm2[jj]  = TSMatrix[jj].norm(weight)
+  cdef int j
+  for j in xrange(sizeTS):
+    TSMatrix[j] = TSMatrix[j].unitVector(weight)
+    TSNorm2[j]  = TSMatrix[j].norm2(weight)
 
   # preliminary work
-  cdef int i # for looping the TS
-  cdef int j # for IMGS
-  cdef int dimRB  = 1
+  cdef int i                    # for looping the TS
+  cdef int dimRB  = 1           # to store the number of reduced basis vector
   error_dimRB     = [1.]        # to store the max greedy error at each step
   error_dimRB_tmp = [0.]*sizeTS # to store the greedy error for each iTS
   RB_index        = [0]         # to store the index of TS selected to be added to RB
@@ -58,7 +59,7 @@ cpdef generateRB(
   orthoNormalRBVec_File.close()
 
   # Initial info printing and saving
-  printAndWrite(greedyStdout_FilePath, "a", "dimRB %i | TSIndex %i | GreedyError %E | timeSweep(s) %E" % (dimRB, RB_index[-1], error_dimRB[-1], 0.))
+  printAndWrite(greedyStdout_FilePath, "w+", "dimRB %i | TSIndex %i | GreedyError2 %E | timeSweep(s) %E" % (dimRB, RB_index[-1], error_dimRB[-1], 0.))
 
   # greedy algorithm
   continueToWork = True
@@ -68,6 +69,10 @@ cpdef generateRB(
     # Use the last reduced basis to update the error vector
     # In fact, it is called modified Gram-Schmidt process
     for i in xrange(sizeTS):
+      # To skip the index already added to be the reduced basis vector for speeding up the program
+      if i in RB_index:
+        error_dimRB_tmp[i] = 0.
+        continue
       Projcoeff = TSMatrix[i].innerProduct(RBMatrix[-1], weight)
       ProjNorm2[i] += abs(Projcoeff)**2
       error_dimRB_tmp[i] = TSNorm2[i] - ProjNorm2[i]
@@ -76,30 +81,20 @@ cpdef generateRB(
 
     # Decide to iterate further or not
     if error_dimRB[-1] < tolerance:
-      print "Because error = %E < tolerance = %E" % (error_dimRB[-1], tolerance)
-      print "Greedy algorithm is finished successfully!"
+      printAndWrite(greedyStdout_FilePath, "a", "Because error = %E < tolerance = %E" % (error_dimRB[-1], tolerance))
+      printAndWrite(greedyStdout_FilePath, "a", "Greedy algorithm is finished successfully!")
       continueToWork = False
     elif dimRB == maxRB:
-      print "Because dimRB = maxRB = %i" % (dimRB)
-      print "Greedy algorithm is finished unfortunately!"
+      printAndWrite(greedyStdout_FilePath, "a", "Because dimRB = maxRB = %i" % (dimRB))
+      printAndWrite(greedyStdout_FilePath, "a", "Greedy algorithm is finished unfortunately!")
       continueToWork = False
     elif dimRB == sizeTS:
-      print "Because dimRB = sizeTS = %i" % (dimRB)
-      print "Greedy algorithm is finished unfortunately!"
+      printAndWrite(greedyStdout_FilePath, "a", "Because dimRB = sizeTS = %i" % (dimRB))
+      printAndWrite(greedyStdout_FilePath, "a", "Greedy algorithm is finished unfortunately!")
       continueToWork = False
     else:
       # Perform orthonormalization with modified Gram-Schmidt process
-      RBVec_add = TSMatrix[RB_index[-1]]
-      norm_old = 1.
-      continueToMGS = True
-      while continueToMGS:
-        for j in xrange(dimRB-1):
-          RBVec_add = RBVec_add.rejection(RBMatrix[j], weight)
-        norm_new = RBVec_add.norm()
-        if norm_new/norm_old < 0.8:
-          norm_old = norm_new
-        else:
-          continueToMGS = False
+      RBVec_add = IMGS(TSMatrix[RB_index[-1]], RBMatrix, weight, dimRB, greedyStdout_FilePath)
       RBMatrix.append(RBVec_add.unitVector(weight))
 
       # Save the orthonormalized resultant basis vector
@@ -109,11 +104,44 @@ cpdef generateRB(
 
       # Print and Save all general information
       timeSweep_f = time.time() - timeSweep_i
-      printAndWrite(greedyStdout_FilePath, "a", "dimRB %i | TSIndex %i | GreedyError %E | timeSweep(s) %E" % (dimRB, RB_index[-1], error_dimRB[-1], timeSweep_f))
+      printAndWrite(greedyStdout_FilePath, "a", "dimRB %i | TSIndex %i | GreedyError2 %E | timeSweep(s) %E" % (dimRB, RB_index[-1], error_dimRB[-1], timeSweep_f))
+
+"""
+  Iterative modified Gram-Schmidt process, Hoffmann
+  Input:
+    vectorA               : The vector to be added to the current reduced basis
+    RBMatrix              : a list of current reduced basis.
+    weight                : a number/vec.vector1D for calculating weighted inner product.
+    dimRB                 : len(RBMatrix)
+    greedyStdout_FilePath : The file path for saving stdout if any
+    orthoCondition        : a number range from 0 (loosest) to 1 (tightest)
+    maxCount              : maximum number of iterations
+  Output:
+    a orthonormal vector to the space spanned by reduced basis.
+"""
+def IMGS(vectorA, RBMatrix, weight, dimRB, greedyStdout_FilePath, orthoCondition = 0.25, maxCount = 3):
+  cdef int j
+  cdef double norm_old
+  cdef double norm_new
+  norm2_old = vectorA.norm2()
+  count = 0
+  continueToMGS = True
+  while continueToMGS:
+    count += 1
+    for j in xrange(dimRB-1):
+      vectorA = vectorA.rejection(RBMatrix[j], weight)
+    norm2_new = vectorA.norm2()
+    if norm2_new/norm2_old < orthoCondition:
+      norm2_old = norm2_new
+    elif count >= maxCount:
+      continueToMGS = False
+    else:
+      continueToMGS = False
+  return vectorA
 
 def printAndWrite(filePath, mode, strToBeSaved):
   print strToBeSaved
   f = open(filePath, mode)
-  f.write(strToBeSaved)
+  f.write(strToBeSaved+"\n")
   f.close()
 
