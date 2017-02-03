@@ -172,7 +172,7 @@ cdef class vector1D(object):
     return other.innerProduct(self, weight)
   @cython.cdivision(True) 
   def projectionOnUnitVector(self, other, weight = None):
-    return other.mul(self.innerProduct(other, weight))
+    return other.mul(self.projectionCoeffOnUnitVector(other, weight))
   @cython.cdivision(True) 
   def rejectionOnUnitVector(self, other, weight = None):
     return self - self.projectionOnUnitVector(other, weight)

@@ -69,11 +69,12 @@ cpdef generateRB(
     # Use the last reduced basis to update the error vector
     # In fact, it is called modified Gram-Schmidt process
     for i in xrange(sizeTS):
-      # To skip the index already added to be the reduced basis vector for speeding up the program
+      # To skip the index already added to be the reduced basis vector for speeding
       if i in RB_index:
         error_dimRB_tmp[i] = 0.
         continue
-      Projcoeff = TSMatrix[i].innerProduct(RBMatrix[-1], weight)
+      # "projectionCoeffOnUnitVector" is used instead of "projectionCoeff" for speeding up becoz all RB are normalized before.
+      Projcoeff = TSMatrix[i].projectionCoeffOnUnitVector(RBMatrix[-1], weight)
       ProjNorm2[i] += abs(Projcoeff)**2
       error_dimRB_tmp[i] = TSNorm2[i] - ProjNorm2[i]
     RB_index.append(np.argmax(error_dimRB_tmp))
@@ -129,7 +130,8 @@ def IMGS(vectorA, RBMatrix, weight, dimRB, greedyStdout_FilePath, orthoCondition
   while continueToMGS:
     count += 1
     for j in xrange(dimRB-1):
-      vectorA = vectorA.rejection(RBMatrix[j], weight)
+      # "rejectionOnUnitVector" is used instead of "rejection" for speeding up becoz all RB are normalized before.
+      vectorA = vectorA.rejectionOnUnitVector(RBMatrix[j], weight)
     norm2_new = vectorA.norm2()
     if norm2_new/norm2_old < orthoCondition:
       norm2_old = norm2_new
