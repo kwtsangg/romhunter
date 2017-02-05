@@ -71,7 +71,6 @@ cpdef generateRB(
   # Choose an arbitrary seed choice, here the first vector in TS is chosen.
   cdef list RBMatrix = []
   RBMatrix.append(TSMatrix[0].unitVector(weight))
-
   gu.write(orthoNormalRBVec_FilePath, "w+", RBMatrix[-1].printComponent())
 
   # Initial info printing and saving
