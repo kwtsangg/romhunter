@@ -13,9 +13,9 @@ Description=""" To get the frequency vector at each point in phase space for dif
 #  Module
 #===============================================================================
 import sys
-from gwhunter.utils.generalPythonFunc import printf
+from gwhunter.utils.general import printf
 from gwhunter.waveform.waveform import IMRPhenomPv2FD
-import vectorUtils as vec
+import gwhunter.utils.vector as vec
 
 #===============================================================================
 #  Main
@@ -23,84 +23,65 @@ import vectorUtils as vec
 
 """
   Input:
-    freqList          : a list to store frequency nodes being evaluated
-    TSParams_FilePath : a file containing parameters needed for that model
-    modelName         : item in [ "IMRPhenomPv2FD" ]
-    modelTag          : item in [ "hp", "hc", "hphp", "hphc", "hchc", "hchc", "hpPlushcSquared" ]
+    freqList     : a list to store frequency nodes being evaluated
+    paramsMatrix : a matrix containing parameters needed for that model
+    modelName    : item in [ "IMRPhenomPv2FD" ]
+    modelTag     : item in [ "hp", "hc", "hphp", "hphc", "hchc", "hchc", "hpPlushcSquared" ]
   Output:
-    TSMatrix          : a list of vec.vector1D (defined in vectorUtils.py)
+    vecMatrix    : a list of vec.vector1D (defined in vectorUtils.py)
 """
-def evaluateModel(freqList, TSParams_FilePath, modelName, modelTag):
-  TSMatrix = []
+def evaluateModel(freqList, paramsMatrix, modelName, modelTag):
+  vecMatrix = []
   if modelName == "IMRPhenomPv2FD":
-    TSParams_File = open(TSParams_FilePath, "r")
-    for iTSParams in TSParams_File:
-      iTSParams = iTSParams.split()
-      for j in xrange(len(iTSParams)):
-        iTSParams[j] = float(iTSParams[j])
-      iTSList  = IMRPhenomPv2FD(freqList, iTSParams[0], iTSParams[1], iTSParams[2], iTSParams[3], iTSParams[4], iTSParams[5], iTSParams[6])
-      TSMatrix.append(evaluateModelTag(iTSList, modelTag))
-    TSParams_File.close()
+    for iparams in paramsMatrix:
+      iVecList  = IMRPhenomPv2FD(freqList, iparams[0], iparams[1], iparams[2], iparams[3], iparams[4], iparams[5], iparams[6])
+      vecMatrix.append(evaluateModelTag(iVecList, modelTag))
   else:
     printf("In evaluateModel, the model (%s) is not supported. Exiting ...", __file__, "error") 
     sys.exit()
-  return TSMatrix
+  return vecMatrix
 
 """
   Input:
-    iTSList  : The trainingset vector list with component [0] to be hp and component [1] to be hc
-    modelTag : item in [ "hp", "hc", "hphp", "hchc", "hphc", "hpPlushcSquared" ]
+    iVecList  : The list with component [0] to be hplus vector list and component [1] to be hcross vector list
+    modelTag  : item in [ "hp", "hc", "hphp", "hphc", "hchc", "hchc", "hpPlushcSquared" ]
   Output:
     a vec.vector1D object (defined in vectorUtils.py) with tag considered.
 """
-def evaluateModelTag(iTSList, modelTag):
+def evaluateModelTag(iVecList, modelTag):
   # hp
   if modelTag == "hp":
-    iTSVechp = vec.vector1D(iTSList[0])
-    return iTSVechp
+    iVechp = vec.vector1D(iVecList[0])
+    return iVechp
   # hc
   elif modelTag == "hc":
-    iTSVechc = vec.vector1D(iTSList[1])
-    return iTSVechc
+    iVechc = vec.vector1D(iVecList[1])
+    return iVechc
   # hp * conj(hp)
   elif modelTag == "hphp":
-    iTSVechp = vec.vector1D(iTSList[0])
-    return iTSVechp*(iTSVechp.conj())
+    iVechp = vec.vector1D(iVecList[0])
+    return iVechp*(iVechp.conj())
   # hp * conj(hc)
   elif modelTag == "hphc":
-    iTSVechp = vec.vector1D(iTSList[0])
-    iTSVechc = vec.vector1D(iTSList[1])
-    return iTSVechp*(iTSVechc.conj())
+    iVechp = vec.vector1D(iVecList[0])
+    iVechc = vec.vector1D(iVecList[1])
+    return iVechp*(iVechc.conj())
   # hc * conj(hp)
   elif modelTag == "hchp":
-    iTSVechp = vec.vector1D(iTSList[0])
-    iTSVechc = vec.vector1D(iTSList[1])
-    return iTSVechc*(iTSVechp.conj())
+    iVechp = vec.vector1D(iVecList[0])
+    iVechc = vec.vector1D(iVecList[1])
+    return iVechc*(iVechp.conj())
   # hc * conj(hc)
   elif modelTag == "hchc":
-    iTSVechc = vec.vector1D(iTSList[1])
-    return iTSVechc*(iTSVechc.conj())
+    iVechc = vec.vector1D(iVecList[1])
+    return iVechc*(iVechc.conj())
   # (hp+hc) * conj(hp+hc)
   elif modelTag == "hpPLUShcSquared":
-    iTSVechp = vec.vector1D(iTSList[0])
-    iTSVechc = vec.vector1D(iTSList[1])
-    iTSVechpPLUShc = iTSVechp + iTSVechc
-    return iTSVechpPLUShc*(iTSVechpPLUShc.conj())
+    iVechp = vec.vector1D(iVecList[0])
+    iVechc = vec.vector1D(iVecList[1])
+    iVechpPLUShc = iVechp + iVechc
+    return iVechpPLUShc*(iVechpPLUShc.conj())
   else:
     printf("In evaluateModelTag, the modelTag (%s) is not supported. Exiting...", __file__, "error")
     sys.exit()
-
-"""
-  Input:
-    TSVec_FilePath : a file containing the vector
-  Output:
-    TSMatrix          : a list of vec.vector1D (defined in vectorUtils.py)
-"""
-def getFromFile(TSVec_FilePath):
-  TSMatrix = []
-  TSVec_File = open(TSVec_FilePath, "r")
-  for iTSVec in TSVec_File:
-    TSMatrix.append(vec.vector1D(iTSVec.split()))
-  TSVec_File.close()
-  return TSMatrix
 
