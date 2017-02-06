@@ -35,8 +35,8 @@ import trainingset as ts
 cpdef generateEIM(RBMatrix, freqList, EIMStdout_FilePath, stdout_FilePath):
   # Start time
   timeEIM_i = time.time()
-  gu.printAndWrite( stdout_FilePath, "a+", "---")
-  gu.printAndWrite( stdout_FilePath, "a", "EIM starts.")
+  gu.printAndWrite(stdout_FilePath, "a+", "---", withTime = True)
+  gu.printAndWrite(stdout_FilePath, "a", "EIM starts.", withTime = True)
 
   # Preliminary work
   cdef int  dimRB   = len(RBMatrix)
@@ -62,8 +62,8 @@ cpdef generateEIM(RBMatrix, freqList, EIMStdout_FilePath, stdout_FilePath):
     gu.printAndWrite( EIMStdout_FilePath, "a", "dimEIM %i | EIMindex %i | EIMfreq %.4f | timeSweep(s) %E" % (dimEIM, EIM_index[-1], EIM_freq[-1], timeSweep_f) )
   
   timeEIM_f = time.time() - timeEIM_i
-  gu.printAndWrite(stdout_FilePath, "a", "EIM is finished successfully!")
-  gu.printAndWrite(stdout_FilePath, "a", "EIM takes %f wall seconds to complete." % timeEIM_f)
+  gu.printAndWrite(stdout_FilePath, "a", "EIM is finished successfully!", withTime = True)
+  gu.printAndWrite(stdout_FilePath, "a", "EIM takes %f wall seconds to complete." % timeEIM_f, withTime = True)
 
 """
   Input:

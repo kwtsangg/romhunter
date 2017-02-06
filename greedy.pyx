@@ -48,8 +48,8 @@ cpdef generateRB(
                  ):
   # Start time and print initial information
   timeGreedy_i = time.time()
-  gu.printAndWrite(stdout_FilePath, "a+", "---")
-  gu.printAndWrite(stdout_FilePath, "a", "Greedy algorithm starts.")
+  gu.printAndWrite(stdout_FilePath, "a+", "---", withTime = True)
+  gu.printAndWrite(stdout_FilePath, "a", "Greedy algorithm starts.", withTime = True)
 
   # Normalize TS and get the size of TS
   cdef int  sizeTS    = len(TSMatrix)
@@ -112,21 +112,21 @@ cpdef generateRB(
 
     # Decide to iterate further or not
     if error_dimRB[-1] < tolerance:
-      gu.printAndWrite(stdout_FilePath, "a", "At dimRB = %i, because error = %E < tolerance = %E" % (dimRB, error_dimRB[-1], tolerance))
-      gu.printAndWrite(stdout_FilePath, "a", "Greedy algorithm is finished successfully!")
+      gu.printAndWrite(stdout_FilePath, "a", "At dimRB = %i, because error = %E < tolerance = %E" % (dimRB, error_dimRB[-1], tolerance), withTime = True)
+      gu.printAndWrite(stdout_FilePath, "a", "Greedy algorithm is finished successfully!", withTime = True)
       continueToWork = False
     elif dimRB == maxRB:
-      gu.printAndWrite(stdout_FilePath, "a", "Because dimRB = maxRB = %i" % (dimRB))
-      gu.printAndWrite(stdout_FilePath, "a", "Greedy algorithm is finished unfortunately!")
+      gu.printAndWrite(stdout_FilePath, "a", "Because dimRB = maxRB = %i" % (dimRB), withTime = True)
+      gu.printAndWrite(stdout_FilePath, "a", "Greedy algorithm is finished unfortunately!", withTime = True)
       continueToWork = False
     elif dimRB == sizeTS:
-      gu.printAndWrite(stdout_FilePath, "a", "Because dimRB = sizeTS = %i" % (dimRB))
-      gu.printAndWrite(stdout_FilePath, "a", "Greedy algorithm is finished unfortunately!")
+      gu.printAndWrite(stdout_FilePath, "a", "Because dimRB = sizeTS = %i" % (dimRB), withTime = True)
+      gu.printAndWrite(stdout_FilePath, "a", "Greedy algorithm is finished unfortunately!", withTime = True)
       continueToWork = False
 
   # Final part
   timeGreedy = time.time() - timeGreedy_i
-  gu.printAndWrite(stdout_FilePath, "a", "The greedy algorithm takes %f wall seconds to complete." % timeGreedy)
+  gu.printAndWrite(stdout_FilePath, "a", "The greedy algorithm takes %f wall seconds to complete." % timeGreedy, withTime = True)
   
   return RBMatrix
 
@@ -159,7 +159,7 @@ cpdef IMGS(vectorA, RBMatrix, weight, dimRB, TSIndex, stdout_FilePath, orthoCond
     if norm2_new/norm2_old < orthoCondition:
       if count > maxCount:
         continueToMGS = False
-        gu.printAndWrite(stdout_FilePath, "a", "Warning :: The maxCount (%i) for IMGS reached. %ith (TSIndex %i) might not be orthonormalized enough." % (maxCount, dimRB, TSIndex))
+        gu.printAndWrite(stdout_FilePath, "a", "Warning :: The maxCount (%i) for IMGS reached. %ith (TSIndex %i) might not be orthonormalized enough." % (maxCount, dimRB, TSIndex), withTime = True)
       else:
         norm2_old = norm2_new
     else:
