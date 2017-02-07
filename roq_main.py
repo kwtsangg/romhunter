@@ -36,6 +36,8 @@ def main():
   greedyStdout_FilePath     = "/home/kwtsang/romhunter/output/greedyStdout.txt"
   stdout_FilePath           = "/home/kwtsang/romhunter/output/stdout.txt"
   EIMStdout_FilePath        = "/home/kwtsang/romhunter/output/EIMStdout.txt"
+  BkfStdout_FilePath        = "/home/kwtsang/romhunter/output/BkfStdout.txt"
+  AinvStdout_FilePath       = "/home/kwtsang/romhunter/output/AinvStdout.txt"
   tolerance                 = 1e-12
   maxRB                     = 3000
 
@@ -54,9 +56,23 @@ def main():
   # eim
   for i in xrange(len(RBMatrix)):
     RBMatrix[i] = RBMatrix[i].component
+#  RB_index = df.datahunter(greedyStdout_FilePath).getColumn(5, dataFormat="int")
+#  for i in xrange(len(RBMatrix)):
+#    RBMatrix[i] = TSMatrix[RB_index[i]].unitVector().component
+
   gu.printAndWrite(stdout_FilePath, "a", "Generating EIM ...", withTime = True)
-  eim.generateEIM(RBMatrix, freqList, EIMStdout_FilePath, stdout_FilePath)
-  gu.printAndWrite(stdout_FilePath, "a", "EIM is generated successfully ...", withTime = True)
+  EIM_index = eim.generateEIM(RBMatrix, freqList, EIMStdout_FilePath, stdout_FilePath)
+  gu.printAndWrite(stdout_FilePath, "a", "EIM is generated successfully!", withTime = True)
+
+  # interpolation coefficient for basis h(param, F_k). F_k are EIM nodes.
+  # ps. You can interpolate the waveform for basis h(param_i, f) or h(param, F_k).
+  #     The former is done in eim.generateEIM while the latter is done here.
+  gu.printAndWrite(stdout_FilePath, "a", "Generating interpolation list ...", withTime = True)
+  eim.generateInterpolationList(RBMatrix, EIM_index, len(freqList), AinvStdout_FilePath, BkfStdout_FilePath)
+  gu.printAndWrite(stdout_FilePath, "a", "Interpolation list is generated successfully!", withTime = True)
+
+  # Final information
+  gu.printAndWrite(stdout_FilePath, "a", "romhunter is finished successfully!", withTime = True)
 
 if __name__ == "__main__":
 #  if len(sys.argv) != 2:
