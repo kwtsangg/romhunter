@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-__file__       = "greedy.pyx"
+__file__       = "greedy.py"
 __author__     = "Ka Wa Tsang"
 __copyright__  = "Copyright 2017"
 __version__    = "1.0.1"
@@ -12,10 +12,8 @@ Description=""" To perform the greedy algorithm.
 #===============================================================================
 #  Module
 #===============================================================================
-import cython
 import time
 import numpy as np
-cimport numpy as np
 
 import gwhunter.utils.vector as vec
 import gwhunter.utils.general as gu
@@ -36,41 +34,35 @@ import gwhunter.utils.general as gu
     RBMatrix                  : a list of vec.vector1D storing the orthonormalized reduced basis vector (for EIM)
                                 It is saved in orthoNormalRBVec_FilePath as well
 """
-@cython.cdivision(True) 
-cpdef generateRB(
-                 TSMatrix,
-                 weight,
-                 orthoNormalRBVec_FilePath,
-                 greedyStdout_FilePath,
-                 stdout_FilePath,
-                 tolerance = 1e-12,
-                 maxRB = 5000,
-                 ):
+def generateRB(
+               TSMatrix,
+               weight,
+               orthoNormalRBVec_FilePath,
+               greedyStdout_FilePath,
+               stdout_FilePath,
+               tolerance = 1e-12,
+               maxRB = 5000,
+               ):
   # Start time and print initial information
   timeGreedy_i = time.time()
   gu.printAndWrite(stdout_FilePath, "a+", "---", withTime = True)
   gu.printAndWrite(stdout_FilePath, "a", "Greedy algorithm starts.", withTime = True)
 
   # Normalize TS and get the size of TS
-  cdef int  sizeTS    = len(TSMatrix)
-  cdef list TSNorm2   = [0.] * sizeTS
-  cdef list ProjNorm2 = [0.] * sizeTS
-  cdef int j
-  for j in xrange(sizeTS):
-    TSMatrix[j] = TSMatrix[j].unitVector(weight)
-    TSNorm2[j]  = TSMatrix[j].norm2(weight)
+  sizeTS   = len(TSMatrix)
+  TSMatrix = [TSMatrix[i].unitVector(weight) for i in xrange(sizeTS)]
 
   # preliminary work
-  cdef int i                              # for looping the TS
-  cdef complex Projcoeff                  # the intermediate step variable for calculating the ProjNorm2
-  cdef int  dimRB           = 1           # the number of reduced basis vector
-  cdef list error_dimRB     = [1.]        # the max greedy error at each step
-  cdef list error_dimRB_tmp = [0.]*sizeTS # the greedy error for each iTS
-  cdef list RB_index        = [0]         # the index of TS selected to be added to RB
+  seed            = 0           # the first vector chosen to be RB
+  dimRB           = 1           # the number of reduced basis vector
+  error_dimRB     = [1.]        # the max greedy error at each step
+  error_dimRB_tmp = [0.]*sizeTS # the greedy error for each iTS
+  RB_index        = [seed]         # the index of TS selected to be added to RB
+  ProjNorm2       = [0.]*sizeTS # projection square at each step
 
   # Choose an arbitrary seed choice, here the first vector in TS is chosen.
-  cdef list RBMatrix = []
-  RBMatrix.append(TSMatrix[0].unitVector(weight))
+  RBMatrix = []
+  RBMatrix.append(TSMatrix[seed].unitVector(weight))
   gu.write(orthoNormalRBVec_FilePath, "w+", RBMatrix[-1].printComponent())
 
   # Initial info printing and saving
@@ -89,10 +81,10 @@ cpdef generateRB(
       if i in RB_index:
         error_dimRB_tmp[i] = 0.
         continue
-      # "projectionCoeffOnUnitVector" is used instead of "projectionCoeff" for speeding up becoz all RB are normalized before.
-      Projcoeff = TSMatrix[i].projectionCoeffOnUnitVector(RBMatrix[-1], weight)
+      Projcoeff = 0.
+      Projcoeff = TSMatrix[i].projectionCoeff(RBMatrix[-1], weight)
       ProjNorm2[i] += (Projcoeff*Projcoeff.conjugate()).real
-      error_dimRB_tmp[i] = TSNorm2[i] - ProjNorm2[i]
+      error_dimRB_tmp[i] = 1. - ProjNorm2[i]
     RB_index.append(np.argmax(error_dimRB_tmp))
     error_dimRB.append(error_dimRB_tmp[RB_index[-1]])
     timeSearch = time.time() - timeSearch_i
@@ -126,7 +118,7 @@ cpdef generateRB(
 
   # Final part
   timeGreedy = time.time() - timeGreedy_i
-  gu.printAndWrite(stdout_FilePath, "a", "The greedy algorithm takes %f wall seconds to complete." % timeGreedy, withTime = True)
+  gu.printAndWrite(stdout_FilePath, "a", "The greedy algorithm takes %E wall seconds to complete." % timeGreedy, withTime = True)
   
   return RBMatrix
 
@@ -144,17 +136,15 @@ cpdef generateRB(
   Output:
     a orthonormal vector (vec.vector1D) to the space spanned by reduced basis.
 """
-cpdef IMGS(vectorA, RBMatrix, weight, dimRB, TSIndex, stdout_FilePath, orthoCondition = 0.25, maxCount = 3):
-  cdef int j
-  cdef double norm2_old = vectorA.norm2()
-  cdef double norm2_new
-  cdef int count = 0
+def IMGS(vectorA, RBMatrix, weight, dimRB, TSIndex, stdout_FilePath, orthoCondition = 0.25, maxCount = 3):
+  norm2_old = vectorA.norm2()
+  count = 0
+
   continueToMGS = True
   while continueToMGS:
     count += 1
     for j in xrange(dimRB-1):
-      # "rejectionOnUnitVector" is used instead of "rejection" for speeding up becoz all RB are normalized before.
-      vectorA = vectorA.rejectionOnUnitVector(RBMatrix[j], weight)
+      vectorA = vectorA.rejection(RBMatrix[j], weight)
     norm2_new = vectorA.norm2()
     if norm2_new/norm2_old < orthoCondition:
       if count > maxCount:

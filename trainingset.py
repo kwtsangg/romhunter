@@ -14,7 +14,7 @@ Description=""" To get the frequency vector at each point in phase space for dif
 #===============================================================================
 import sys
 from gwhunter.utils.general import printf
-from gwhunter.waveform.waveform import IMRPhenomPv2FD
+from gwhunter.waveform.lalwaveform import IMRPhenomPv2FD
 import gwhunter.utils.vector as vec
 
 #===============================================================================
