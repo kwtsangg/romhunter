@@ -130,6 +130,7 @@ def main():
   
   timeValidation = time.time() - timeValidation_i
   gu.printAndWrite(generalStdout_FilePath, "a", "The validation is finished successfully in %E seconds!" % timeValidation, withTime = True)
+  gu.printAndWrite(generalStdout_FilePath, "a", "There are %i bad points out of %i. (%.1f %s)" % (sum(isBadPoints), numberOfPoints, sum(isBadPoints)/float(numberOfPoints)*100., "%"), withTime = True)
   # Save the matrix with random-generated params, greedyError2 and interpError2
   np.savetxt(randParams_FilePath, randParamsMatrix)
 
