@@ -1,0 +1,78 @@
+##########################################################################################
+general:
+  TSParams_FilePath: /home/kwtsang/romhunter/input/SmithEtAlBases/GreedyPoints_4s.txt
+  modelName: IMRPhenomPv2FD
+  modelTag:  hp
+  outputdir: /home/kwtsang/romhunter/ROMOutput
+  fmin: 20
+  fmax: 1024
+  seglen: 4
+
+###########################################################################################
+greedy:
+  toleranceGreedy: 1e-12
+  maxRB: 3000
+
+###########################################################################################
+EIM:
+
+###########################################################################################
+validation:
+  toleranceInterp: 1e-8
+  numberOfPoints: 10000
+  Vinv_FilePath: /home/kwtsang/romhunter/ROMOutput/Vinv.npy
+  Bkf_FilePath: /home/kwtsang/romhunter/ROMOutput/Bkf.npy
+  RBMatrix_FilePath: /home/kwtsang/romhunter/ROMOutput/orthonormalRB.txt
+  EIMStdout_FilePath: /home/kwtsang/romhunter/ROMOutput/EIMStdout.txt
+  outputdir: /home/kwtsang/romhunter/validationOutput/
+  columnSequence:
+    - m1
+    - m2
+    - chi1L
+    - chi2L
+    - chip
+    - thetaJ
+    - alpha0
+    - nothing
+  randParamsRangeDict:
+    kerrBound: 0.98
+    Mc:
+      min: 12.3
+      max: 23.0
+      method: uniform
+    q:
+      min: 1.0
+      max: 9.0
+      method: uniform
+    m1:
+      min: 1.0
+      max:
+      method: qMc
+    m2:
+      min: 1.0
+      max:
+      method: qMc
+    chi1L:
+      min: -0.9
+      max: 0.9
+      method: uniform
+    chi2L:
+      min: -0.9
+      max: 0.9
+      method: uniform
+    chip:
+      min: 0.0
+      max: 0.9
+      method: uniform
+    thetaJ:
+      min: 0.0
+      max: 3.14159265
+      method: uniform
+    alpha0:
+      min: 0.0
+      max: 6.28318531
+      method: uniform
+    nothing:
+      min: 0.0
+      max: 0.0
+      method: zero

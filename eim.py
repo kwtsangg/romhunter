@@ -28,15 +28,15 @@ import trainingset as ts
     RBMatrix           : a list of list storing the (orthonormalized or without) waveform. Its dimension is [dimRB][dimFreq]
     freqList           : a list of frequency node. Its dimension is [dimFreq]
     EIMStdout_FilePath : an output file path for the standard output of EIM.
-    stdout_FilePath    : an output file path for the standard output
+    ROMStdout_FilePath : an output file path for the standard output
   Output:
     EIM_index          : a list holding the TSindex of EIM
 """
-def generateEIM(RBMatrix, freqList, EIMStdout_FilePath, stdout_FilePath):
+def generateEIM(RBMatrix, freqList, EIMStdout_FilePath, ROMStdout_FilePath):
   # Start time
   timeEIM_i = time.time()
-  gu.printAndWrite(stdout_FilePath, "a+", "---", withTime = True)
-  gu.printAndWrite(stdout_FilePath, "a", "EIM starts.", withTime = True)
+  gu.printAndWrite(ROMStdout_FilePath, "a+", "---", withTime = True)
+  gu.printAndWrite(ROMStdout_FilePath, "a", "EIM starts.", withTime = True)
 
   # Preliminary work
   dimRB   = len(RBMatrix)
@@ -49,7 +49,7 @@ def generateEIM(RBMatrix, freqList, EIMStdout_FilePath, stdout_FilePath):
   EIM_index.append( np.argmax( np.abs(RBMatrix[0].component) ) )
   EIM_freq.append( freqList[EIM_index[-1]] )
   timeSweep_f = time.time() - timeSweep_i
-  gu.printAndWrite( EIMStdout_FilePath, "w+", "dimEIM %i | EIMindex %i | EIMfreq %.4f | timeSweep(s) %E" % (1, EIM_index[-1], EIM_freq[-1], timeSweep_f) )
+  gu.printAndWrite( EIMStdout_FilePath, "w+", "dimEIM %i | EIMindex %i | EIMfreq %.4f | timeSweep(s) %E" % (1, EIM_index[-1], EIM_freq[-1], timeSweep_f), withTime = True )
   
   # Calculate other EIM index
   for dimEIM in xrange(2, dimRB+1):
@@ -58,12 +58,12 @@ def generateEIM(RBMatrix, freqList, EIMStdout_FilePath, stdout_FilePath):
     EIM_index.append( nextIndex )
     EIM_freq.append( freqList[EIM_index[-1]] )
     timeSweep_f = time.time() - timeSweep_i
-    gu.printAndWrite( EIMStdout_FilePath, "a", "dimEIM %i | EIMindex %i | EIMfreq %.4f | timeSweep(s) %E" % (dimEIM, EIM_index[-1], EIM_freq[-1], timeSweep_f) )
+    gu.printAndWrite( EIMStdout_FilePath, "a", "dimEIM %i | EIMindex %i | EIMfreq %.4f | timeSweep(s) %E" % (dimEIM, EIM_index[-1], EIM_freq[-1], timeSweep_f), withTime = True )
   
   # Final information
   timeEIM_f = time.time() - timeEIM_i
-  gu.printAndWrite(stdout_FilePath, "a", "EIM is finished successfully!", withTime = True)
-  gu.printAndWrite(stdout_FilePath, "a", "EIM takes %E wall seconds to complete." % timeEIM_f, withTime = True)
+  gu.printAndWrite(ROMStdout_FilePath, "a", "EIM is finished successfully!", withTime = True)
+  gu.printAndWrite(ROMStdout_FilePath, "a", "EIM takes %E wall seconds to complete." % timeEIM_f, withTime = True)
 
   return EIM_index
 
@@ -97,34 +97,34 @@ def generateNewEIM(RBMatrix, EIM_index):
   return np.argmax(np.absolute(residual))
 
 """
-  After having RB and EIM nodes, the interpolation I[h] of a waveform h(param, f) is given by Sum_k=1^n B_k(f)*h(param, F_k) where B_k(f) is Sum_k=1^n inverse(A)_ik h(param_i, f).
-  A is {{ e1(F1) e2(F1) ... eN(F1) },
+  After having RB and EIM nodes, the interpolation I[h] of a waveform h(param, f) is given by Sum_k=1^n B_k(f)*h(param, F_k) where B_k(f) is Sum_k=1^n inverse(V)_ik h(param_i, f).
+  V is {{ e1(F1) e2(F1) ... eN(F1) },
         { e1(F2) e2(F2) ... eN(F2) },
         { ...    ...    ...  ...   },
         { e1(FN) e2(FN) ... eN(FN) }}
-  So A_ij = h(param_j)(EIM_i)
+  So V_ij = h(param_j)(EIM_i)
 
   Input:
     RBMatrix  : The list of lists which stores the RB. Its dimension is [dimRB, dimFreq]
     EIM_index : The list of EIM nodes indices obtained from generateEIM function above
   Output:
-    a list of lists of B_kf = Ainv^T * h_if, its dimension is [dimRB, dimFreq]
+    a list of lists of B_kf = Vinv^T * h_if, its dimension is [dimRB, dimFreq]
 """
 # TODO: Check the result correct or not (2017-02-07 06:45:19 CET)
-def generateInterpolationList(RBMatrix, EIM_index, AinvStdout_FilePath, BkfStdout_FilePath):
+def generateInterpolationList(RBMatrix, EIM_index, Vinv_FilePath, Bkf_FilePath):
   # Preliminary work
   dimRB = len(RBMatrix)
 
-  A_ij = np.array([ [RBMatrix[j].component[EIM_index[i]] for j in xrange(dimRB)] for i in xrange(dimRB) ])
+  V_ij = np.array([ [RBMatrix[j].component[EIM_index[i]] for j in xrange(dimRB)] for i in xrange(dimRB) ])
   h_if = np.array([ RBMatrix[i].component for i in xrange(dimRB) ])
 
-  # Calculating A inverse and save it
-  Ainv_ij = np.linalg.inv(A_ij)
-  np.savetxt(AinvStdout_FilePath, Ainv_ij)
+  # Calculating V inverse and save it
+  Vinv_ij = np.linalg.inv(V_ij)
+  np.save(Vinv_FilePath, Vinv_ij)
 
-  # Calculating B_k(f) = (Ainv)^T * h(param_i, f) and save it
-  B_kf = np.dot(np.transpose(Ainv_ij),h_if)
-  np.savetxt(BkfStdout_FilePath, B_kf)
+  # Calculating B_k(f) = (Vinv)^T * h(param_i, f) and save it
+  B_kf = np.dot(np.transpose(Vinv_ij),h_if)
+  np.save(Bkf_FilePath, B_kf)
 
   # Converting the 2D numpy array to a 1D list of lists.
   return [B_kf[i] for i in xrange(dimRB)]

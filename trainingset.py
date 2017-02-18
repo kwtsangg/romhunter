@@ -34,6 +34,7 @@ def evaluateModel(freqList, paramsMatrix, modelName, modelTag):
   vecMatrix = []
   if modelName == "IMRPhenomPv2FD":
     for iparams in paramsMatrix:
+      assert len(iparams) > 6
       iVecList  = IMRPhenomPv2FD(freqList, iparams[0], iparams[1], iparams[2], iparams[3], iparams[4], iparams[5], iparams[6])
       vecMatrix.append(evaluateModelTag(iVecList, modelTag))
   else:
