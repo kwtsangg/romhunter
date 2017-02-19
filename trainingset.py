@@ -13,7 +13,7 @@ Description=""" To get the frequency vector at each point in phase space for dif
 #  Module
 #===============================================================================
 import sys
-from gwhunter.utils.general import printf
+import gwhunter.utils.general as gu
 from gwhunter.waveform.lalwaveform import IMRPhenomPv2FD
 import gwhunter.utils.vector as vec
 
@@ -32,14 +32,17 @@ import gwhunter.utils.vector as vec
 """
 def evaluateModel(freqList, paramsMatrix, modelName, modelTag):
   vecMatrix = []
+  progressBar = gu.progressBar(len(paramsMatrix))
+  progressBar.start()
   if modelName == "IMRPhenomPv2FD":
-    for iparams in paramsMatrix:
-      assert len(iparams) > 6
-      iVecList  = IMRPhenomPv2FD(freqList, iparams[0], iparams[1], iparams[2], iparams[3], iparams[4], iparams[5], iparams[6])
+    for i in xrange(len(paramsMatrix)):
+      progressBar.update(i)
+      assert len(paramsMatrix[i]) > 6
+      iVecList  = IMRPhenomPv2FD(freqList, paramsMatrix[i][0], paramsMatrix[i][1], paramsMatrix[i][2], paramsMatrix[i][3], paramsMatrix[i][4], paramsMatrix[i][5], paramsMatrix[i][6])
       vecMatrix.append(evaluateModelTag(iVecList, modelTag))
   else:
-    printf("In evaluateModel, the model (%s) is not supported. Exiting ...", __file__, "error") 
-    sys.exit()
+    raise ValueError("The model (%s) is not supported")
+  progressBar.end()
   return vecMatrix
 
 """
@@ -83,6 +86,5 @@ def evaluateModelTag(iVecList, modelTag):
     iVechpPLUShc = iVechp + iVechc
     return iVechpPLUShc*(iVechpPLUShc.conj())
   else:
-    printf("In evaluateModelTag, the modelTag (%s) is not supported. Exiting...", __file__, "error")
-    sys.exit()
+    raise ValueError("The modelTag (%s) is not supported." % modelTag)
 
