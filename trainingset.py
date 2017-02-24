@@ -32,7 +32,7 @@ import gwhunter.utils.vector as vec
 """
 def evaluateModel(freqList, paramsMatrix, modelName, modelTag):
   vecMatrix = []
-  progressBar = gu.progressBar(len(paramsMatrix))
+  progressBar = gu.progressBar(len(paramsMatrix)-1)
   progressBar.start()
   if modelName == "IMRPhenomPv2FD":
     for i in xrange(len(paramsMatrix)):

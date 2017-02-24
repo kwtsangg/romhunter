@@ -30,7 +30,7 @@ import trainingset as ts
 #===============================================================================
 def generateRandomParamsMatrix(columnSequence, randParamsRangeDict, numberOfPoints):
   randParamsMatrix = []
-  progressBar = gu.progressBar(numberOfPoints)
+  progressBar = gu.progressBar(numberOfPoints-1)
   progressBar.start()
   for i in xrange(numberOfPoints):
     progressBar.update(i)
@@ -83,10 +83,10 @@ def calculateInterpError2(hVector, EIMNodes, BkfMatrix, weight):
 #===============================================================================
 def main():
   timeGenerateRandomParams_i = time.time()
-  gu.printAndWrite(generalStdout_FilePath, "a", "Generating random paramters matrix ...", withTime = True)
+  gu.printAndWrite(generalStdout_FilePath, "a", "Generating random parameters matrix ...", withTime = True)
   randParamsMatrix = generateRandomParamsMatrix(columnSequence, randParamsRangeDict, numberOfPoints)
   timeGenerateRandomParams = time.time() - timeGenerateRandomParams_i
-  gu.printAndWrite(generalStdout_FilePath, "a", "Random paramters matrix is generated succefully in %E seconds!" % timeGenerateRandomParams, withTime = True)
+  gu.printAndWrite(generalStdout_FilePath, "a", "Random parameters matrix is generated succefully in %E seconds!" % timeGenerateRandomParams, withTime = True)
 
   timeEvaluateWaveform_i = time.time()
   gu.printAndWrite(generalStdout_FilePath, "a", "Evaluating the waveform ...", withTime = True)
@@ -108,7 +108,10 @@ def main():
 
   timeValidation_i = time.time()
   gu.printAndWrite(generalStdout_FilePath, "a", "Starting validation ...", withTime = True)
+  progressBar = gu.progressBar(len(randVecMatrix)-1)
+  progressBar.start()
   for randIndexm1 in xrange(len(randVecMatrix)):
+    progressBar.update(randIndexm1)
     timeSweep_i = time.time()
 
     greedyError2.append(calculateGreedyError2(randVecMatrix[randIndexm1], RBMatrix, weight))
@@ -127,6 +130,7 @@ def main():
       gu.printAndWrite(validationStdout_FilePath, "w+", "randIndex %i | GreedyError2 %E | InterpError2 % E | isBad %i | timeSweep(s) %E" % (randIndexm1+1, greedyError2[-1], interpError2[-1], isBadPoints[-1],timeSweep), withTime = True)
     else:
       gu.printAndWrite(validationStdout_FilePath, "a", "randIndex %i | GreedyError2 %E | InterpError2 % E | isBad %i | timeSweep(s) %E" % (randIndexm1+1, greedyError2[-1], interpError2[-1], isBadPoints[-1],timeSweep), withTime = True)
+  progressBar.end()
   
   timeValidation = time.time() - timeValidation_i
   gu.printAndWrite(generalStdout_FilePath, "a", "The validation is finished successfully in %E seconds!" % timeValidation, withTime = True)

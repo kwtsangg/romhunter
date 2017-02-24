@@ -52,13 +52,17 @@ def generateEIM(RBMatrix, freqList, EIMStdout_FilePath, ROMStdout_FilePath):
   gu.printAndWrite( EIMStdout_FilePath, "w+", "dimEIM %i | EIMindex %i | EIMfreq %.4f | timeSweep(s) %E" % (1, EIM_index[-1], EIM_freq[-1], timeSweep_f), withTime = True )
   
   # Calculate other EIM index
+  progressBar = gu.progressBar(dimRB, minIteration = 2)
+  progressBar.start()
   for dimEIM in xrange(2, dimRB+1):
+    progressBar.update(dimEIM)
     timeSweep_i = time.time()
     nextIndex = generateNewEIM(RBMatrix, EIM_index)
     EIM_index.append( nextIndex )
     EIM_freq.append( freqList[EIM_index[-1]] )
     timeSweep_f = time.time() - timeSweep_i
     gu.printAndWrite( EIMStdout_FilePath, "a", "dimEIM %i | EIMindex %i | EIMfreq %.4f | timeSweep(s) %E" % (dimEIM, EIM_index[-1], EIM_freq[-1], timeSweep_f), withTime = True )
+  progressBar.end()
   
   # Final information
   timeEIM_f = time.time() - timeEIM_i
