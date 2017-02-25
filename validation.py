@@ -30,7 +30,7 @@ import trainingset as ts
 #===============================================================================
 def generateRandomParamsMatrix(columnSequence, randParamsRangeDict, numberOfPoints):
   randParamsMatrix = []
-  progressBar = gu.progressBar(numberOfPoints-1)
+  progressBar = gu.progressBar(numberOfPoints)
   progressBar.start()
   for i in xrange(numberOfPoints):
     progressBar.update(i)
@@ -108,7 +108,7 @@ def main():
 
   timeValidation_i = time.time()
   gu.printAndWrite(generalStdout_FilePath, "a", "Starting validation ...", withTime = True)
-  progressBar = gu.progressBar(len(randVecMatrix)-1)
+  progressBar = gu.progressBar(len(randVecMatrix))
   progressBar.start()
   for randIndexm1 in xrange(len(randVecMatrix)):
     progressBar.update(randIndexm1)
