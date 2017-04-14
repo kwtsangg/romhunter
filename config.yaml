@@ -1,12 +1,53 @@
 ##########################################################################################
 general:
-  TSParams_FilePath: /home/kwtsang/romhunter/input/SmithEtAlBases/GreedyPoints_4s.txt
+  TSParams_FilePath: /home/kwtsang/romhunter/SmithEtAlBases/GreedyPoints_4s.txt
   modelName: IMRPhenomPv2FD
   modelTag:  hp
   outputdir: /home/kwtsang/romhunter/ROMOutput
   fmin: 20
   fmax: 1024
   seglen: 4
+
+  # a sequence indicating the corresponding variable name in the final trainingset file
+  columnSequence:
+    - m1
+    - m2
+    - chi1L
+    - chi2L
+    - chip
+    - thetaJ
+    - alpha0
+    - dchi1
+
+  # origin of params, can be from TSParams_FilePath or random number.
+  # available method are "file", "uniform". "chebyshev", "zero".
+  paramsDict:
+    m1:
+      method: file
+      column: 1
+    m2:
+      method: file
+      column: 2
+    chi1:
+      method: file
+      column: 3
+    chi2L:
+      method: file
+      column: 4
+    chip:
+      method: file
+      column: 5
+    thetaJ:
+      method: file
+      column: 6
+    alpha0:
+      method: file
+      column: 7
+    dchi1:
+      method: chebyshev
+      min: -10.0
+      max: 10.0
+      numberOfPoints: 500
 
 ###########################################################################################
 greedy:
@@ -18,7 +59,7 @@ EIM:
 
 ###########################################################################################
 validation:
-  toleranceInterp: 1e-8
+  tolerance: 1e-8
   numberOfPoints: 10000
   Vinv_FilePath: /home/kwtsang/romhunter/ROMOutput/Vinv.npy
   Bkf_FilePath: /home/kwtsang/romhunter/ROMOutput/Bkf.npy
@@ -33,7 +74,6 @@ validation:
     - chip
     - thetaJ
     - alpha0
-    - nothing
   randParamsRangeDict:
     kerrBound: 0.98
     Mc:
@@ -72,7 +112,3 @@ validation:
       min: 0.0
       max: 6.28318531
       method: uniform
-    nothing:
-      min: 0.0
-      max: 0.0
-      method: zero

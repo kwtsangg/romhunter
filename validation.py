@@ -120,7 +120,8 @@ def main():
     interpError2.append(calculateInterpError2(randVecMatrix[randIndexm1], EIMNodes, BkfMatrix, weight))
     randParamsMatrix[randIndexm1].append(interpError2[-1])
 
-    if interpError2[-1] > toleranceInterp:
+    # Determine whether it is a bad point
+    if greedyError2[-1] > toleranceValidation:
       isBadPoints.append(1)
     else:
       isBadPoints.append(0)
@@ -156,11 +157,11 @@ if __name__ == "__main__":
   # TODO: allow weight to pass as vec.vector1D  (2017-02-08 02:59:53 CET)
   weight   = 1./seglen
   freqList = np.linspace(fmin,fmax,int((fmax-fmin)*seglen)+1)
+  columnSequence            = config["general"]["columnSequence"]
 
     # validation
-  toleranceInterp           = float(config["validation"]["toleranceInterp"])
+  toleranceValidation       = float(config["validation"]["tolerance"])
   numberOfPoints            = int(config["validation"]["numberOfPoints"])
-  columnSequence            = config["validation"]["columnSequence"]
   randParamsRangeDict       = config["validation"]["randParamsRangeDict"]
   outputdir                 = config["validation"]["outputdir"]
   randParams_FilePath       = outputdir + "randParams.txt"
