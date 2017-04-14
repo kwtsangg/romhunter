@@ -164,9 +164,9 @@ if __name__ == "__main__":
   numberOfPoints            = int(config["validation"]["numberOfPoints"])
   randParamsRangeDict       = config["validation"]["randParamsRangeDict"]
   outputdir                 = config["validation"]["outputdir"]
-  randParams_FilePath       = outputdir + "randParams.txt"
-  validationStdout_FilePath = outputdir + "validationStdout.txt"
-  generalStdout_FilePath    = outputdir + "generalStdout.txt"
+  randParams_FilePath       = outputdir + "/randParams.txt"
+  validationStdout_FilePath = outputdir + "/validationStdout.txt"
+  generalStdout_FilePath    = outputdir + "/validationGeneralStdout.txt"
 
   EIMStdout_FilePath        = config["validation"]["EIMStdout_FilePath"]
   EIMNodes = df.datahunter(EIMStdout_FilePath).getColumn(6, dataFormat = "int")
