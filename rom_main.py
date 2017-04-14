@@ -31,11 +31,12 @@ def main():
     #===============================#
     # training set 
     #===============================#
-  gu.printAndWrite(ROMStdout_FilePath, "w+", "Building trainingset ...", withTime = True)
-  TSParams = df.datahunter(TSParams_FilePath)
+  gu.printAndWrite(ROMStdout_FilePath, "w+", "Building the input trainingset file...", withTime = True)
+  gu.printAndWrite(ROMStdout_FilePath, "a", "Evaluating trainingset ...", withTime = True)
+  TSParams = df.datahunter(outputdir+"/trainingset.txt")
   TSParamsMatrix = TSParams.getMatrix(dataFormat = "float")
-  TSMatrix = ts.evaluateModel(freqList, TSParamsMatrix, modelName, modelTag)
-  gu.printAndWrite(ROMStdout_FilePath, "a", "trainingset is built successfully!", withTime = True)
+  TSMatrix = ts.evaluateModel(freqList, columnSequence, TSParamsMatrix, modelName, modelTag)
+  gu.printAndWrite(ROMStdout_FilePath, "a", "Trainingset is evaluated successfully!", withTime = True)
 
     #===============================#
     # greedy algorithm 
