@@ -28,7 +28,7 @@ general:
     m2:
       method: file
       column: 2
-    chi1:
+    chi1L:
       method: file
       column: 3
     chi2L:
@@ -47,7 +47,7 @@ general:
       method: chebyshev
       min: -10.0
       max: 10.0
-      numberOfPoints: 500
+      numberOfPoints: 10
 
 ###########################################################################################
 greedy:
@@ -66,14 +66,7 @@ validation:
   RBMatrix_FilePath: /home/kwtsang/romhunter/ROMOutput/orthonormalRB.txt
   EIMStdout_FilePath: /home/kwtsang/romhunter/ROMOutput/EIMStdout.txt
   outputdir: /home/kwtsang/romhunter/validationOutput/
-  columnSequence:
-    - m1
-    - m2
-    - chi1L
-    - chi2L
-    - chip
-    - thetaJ
-    - alpha0
+
   randParamsRangeDict:
     kerrBound: 0.98
     Mc:
@@ -111,4 +104,8 @@ validation:
     alpha0:
       min: 0.0
       max: 6.28318531
+      method: uniform
+    dchi1:
+      min: -10.0
+      max: 10.0
       method: uniform

@@ -31,11 +31,13 @@ def main():
     #===============================#
     # training set 
     #===============================#
-  gu.printAndWrite(ROMStdout_FilePath, "w+", "Building the input trainingset file...", withTime = True)
+  gu.printAndWrite(ROMStdout_FilePath, "w+", "Building the input trainingset file ...", withTime = True)
+  TSParamsMatrix = ts.buildingTrainingset(outputdir, TSParams_FilePath, columnSequence, paramsDict)
   gu.printAndWrite(ROMStdout_FilePath, "a", "Evaluating trainingset ...", withTime = True)
-  TSParams = df.datahunter(outputdir+"/trainingset.txt")
-  TSParamsMatrix = TSParams.getMatrix(dataFormat = "float")
+#  TSParams = df.datahunter(outputdir+"/trainingset.txt")
+#  TSParamsMatrix = TSParams.getMatrix(dataFormat = "float")
   TSMatrix = ts.evaluateModel(freqList, columnSequence, TSParamsMatrix, modelName, modelTag)
+  del TSParamsMatrix
   gu.printAndWrite(ROMStdout_FilePath, "a", "Trainingset is evaluated successfully!", withTime = True)
 
     #===============================#
@@ -43,6 +45,7 @@ def main():
     #===============================#
   gu.printAndWrite(ROMStdout_FilePath, "a", "Generating reduced basis ...", withTime = True)
   RBMatrix = greedy.generateRB(TSMatrix, weight, orthoNormalRB_FilePath, greedyStdout_FilePath, ROMStdout_FilePath, toleranceGreedy, maxRB)
+  del TSMatrix
   gu.printAndWrite(ROMStdout_FilePath, "a", "Reduced basis is generated successfully!", withTime = True)
 
     #===============================#
@@ -83,6 +86,8 @@ if __name__ == "__main__":
   # TODO: allow weight to pass as vec.vector1D  (2017-02-08 02:59:53 CET)
   weight            = 1./seglen
   freqList          = np.linspace(fmin,fmax,int((fmax-fmin)*seglen)+1)
+  columnSequence    = config["general"]["columnSequence"]
+  paramsDict        = config["general"]["paramsDict"]
 
     # "greedy"
   maxRB           = int(config["greedy"]["maxRB"])

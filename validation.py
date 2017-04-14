@@ -17,7 +17,7 @@ import numpy as np
 import yaml
 import time
 
-import gwhunter.utils.randomNumber as rand
+import gwhunter.utils.number as num
 import gwhunter.utils.massParamsConv as mpc
 import gwhunter.utils.vector as vec
 import gwhunter.utils.general as gu
@@ -47,23 +47,23 @@ def generateRandomParamsMatrix(columnSequence, randParamsRangeDict, numberOfPoin
   return randParamsMatrix
 
 def generateParams(variableName, randParamsRangeDict):
-  myrand = rand.randomhunter()
+  myrand = num.numberhunter()
   if variableName == "m1" and randParamsRangeDict[variableName]["method"] == "qMc":
     m1 = -1
     while m1 < randParamsRangeDict["m1"]["min"]:
-      q_tmp  = myrand.getNumber(randParamsRangeDict["q"]["min"], randParamsRangeDict["q"]["max"], randParamsRangeDict["q"]["method"])
-      Mc_tmp = myrand.getNumber(randParamsRangeDict["Mc"]["min"], randParamsRangeDict["Mc"]["max"], randParamsRangeDict["Mc"]["method"])
+      q_tmp  = myrand.getNumber(randParamsRangeDict["q"]["min"], randParamsRangeDict["q"]["max"], method = randParamsRangeDict["q"]["method"])
+      Mc_tmp = myrand.getNumber(randParamsRangeDict["Mc"]["min"], randParamsRangeDict["Mc"]["max"], method = randParamsRangeDict["Mc"]["method"])
       m1 = mpc.Conv_q_Mc_to_m1m2(q_tmp, Mc_tmp)[0]
     return m1
   elif variableName == "m2" and randParamsRangeDict[variableName]["method"] == "qMc":
     m2 = -1
     while m2 < randParamsRangeDict["m2"]["min"]:
-      q_tmp  = myrand.getNumber(randParamsRangeDict["q"]["min"], randParamsRangeDict["q"]["max"], randParamsRangeDict["q"]["method"])
-      Mc_tmp = myrand.getNumber(randParamsRangeDict["Mc"]["min"], randParamsRangeDict["Mc"]["max"], randParamsRangeDict["Mc"]["method"])
+      q_tmp  = myrand.getNumber(randParamsRangeDict["q"]["min"], randParamsRangeDict["q"]["max"], method = randParamsRangeDict["q"]["method"])
+      Mc_tmp = myrand.getNumber(randParamsRangeDict["Mc"]["min"], randParamsRangeDict["Mc"]["max"], method = randParamsRangeDict["Mc"]["method"])
       m2 = mpc.Conv_q_Mc_to_m1m2(q_tmp, Mc_tmp)[1]
     return m2
   else:
-    return myrand.getNumber(randParamsRangeDict[variableName]["min"], randParamsRangeDict[variableName]["max"], randParamsRangeDict[variableName]["method"])
+    return myrand.getNumber(randParamsRangeDict[variableName]["min"], randParamsRangeDict[variableName]["max"], method = randParamsRangeDict[variableName]["method"])
 
 def calculateGreedyError2(hVector, RBMatrix, weight):
   ProjNorm2 = 0.
@@ -90,7 +90,7 @@ def main():
 
   timeEvaluateWaveform_i = time.time()
   gu.printAndWrite(generalStdout_FilePath, "a", "Evaluating the waveform ...", withTime = True)
-  randVecMatrix = ts.evaluateModel(freqList, randParamsMatrix, modelName, modelTag)
+  randVecMatrix = ts.evaluateModel(freqList, columnSequence, randParamsMatrix, modelName, modelTag)
   timeEvaluateWaveform = time.time() - timeEvaluateWaveform_i
   gu.printAndWrite(generalStdout_FilePath, "a", "Evaluation of waveform is finished successfully in %E seconds!" % timeEvaluateWaveform, withTime = True)
 
@@ -173,13 +173,17 @@ if __name__ == "__main__":
   Bkf_FilePath              = config["validation"]["Bkf_FilePath"]
   BkfMatrix                 = np.load(Bkf_FilePath)
   RBMatrix_FilePath         = config["validation"]["RBMatrix_FilePath"]
-  RBMatrix = df.datahunter(RBMatrix_FilePath).getMatrix(dataFormat="complex")
-  for i in xrange(len(RBMatrix)):
-    RBMatrix[i] = vec.vector1D(RBMatrix[i])
 
   # Main
   os.system("mkdir -p %s" % outputdir)
-  gu.printAndWrite(generalStdout_FilePath, "w+", "Starting validation pipeline...", withTime = True)
+  gu.printAndWrite(generalStdout_FilePath, "w+", "Starting validation pipeline ...", withTime = True)
+
+    # Get RBMatrix
+  gu.printAndWrite(generalStdout_FilePath, "a", "Getting reduced basis matrix from file ...", withTime = True)
+  RBMatrix = df.datahunter(RBMatrix_FilePath).getMatrix(dataFormat="complex", progressBar = True)
+  for i in xrange(len(RBMatrix)):
+    RBMatrix[i] = vec.vector1D(RBMatrix[i])
+
   main()
 
   # Final information
