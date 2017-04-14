@@ -149,6 +149,7 @@ if __name__ == "__main__":
 
   # Reading the yaml file and calculate quantities
     # general
+  outputdir = config["general"]["outputdir"]
   modelName = config["general"]["modelName"]
   modelTag  = config["general"]["modelTag"]
   fmin      = float(config["general"]["fmin"])
@@ -163,7 +164,6 @@ if __name__ == "__main__":
   toleranceValidation       = float(config["validation"]["tolerance"])
   numberOfPoints            = int(config["validation"]["numberOfPoints"])
   randParamsRangeDict       = config["validation"]["randParamsRangeDict"]
-  outputdir                 = config["validation"]["outputdir"]
   randParams_FilePath       = outputdir + "/randParams.txt"
   validationStdout_FilePath = outputdir + "/validationStdout.txt"
   generalStdout_FilePath    = outputdir + "/validationGeneralStdout.txt"

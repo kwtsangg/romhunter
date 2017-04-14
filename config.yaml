@@ -65,7 +65,6 @@ validation:
   Bkf_FilePath: /home/kwtsang/romhunter/ROMOutput/Bkf.npy
   RBMatrix_FilePath: /home/kwtsang/romhunter/ROMOutput/orthonormalRB.txt
   EIMStdout_FilePath: /home/kwtsang/romhunter/ROMOutput/EIMStdout.txt
-  outputdir: /home/kwtsang/romhunter/ROMOutput
 
   randParamsRangeDict:
     kerrBound: 0.98
