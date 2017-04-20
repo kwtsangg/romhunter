@@ -1,12 +1,12 @@
 ##########################################################################################
 general:
-  TSParams_FilePath: /home/kwtsang/romhunter/SmithEtAlBases/GreedyPoints_4s.txt
+  TSParams_FilePath: /home/kwtsang/romhunter/ROMOutput/enriched_trainingset.txt
   modelName: IMRPhenomPv2FD
   modelTag:  hp
   outputdir: /home/kwtsang/romhunter/ROMOutput
   fmin: 20
-  fmax: 1024
-  seglen: 4
+  fmax: 2048
+  seglen: 32
 
   # a sequence indicating the corresponding variable name in the final trainingset file
   columnSequence:
@@ -17,11 +17,35 @@ general:
     - chip
     - thetaJ
     - alpha0
+    - zero
+    - dchi0
     - dchi1
+    - dchi2
+    - dchi3
+    - dchi4
+    - dchi5l
+    - dchi6
+    - dchi6l
+    - dchi7
+    - dalpha2
+    - dalpha3
+    - dalpha4
+    - dbeta2
+    - dbeta3
+    - dsigma2
+    - dsigma3
+    - dsigma4
 
   # origin of params, can be from TSParams_FilePath or random number.
   # available method are "file", "uniform". "chebyshev", "zero".
+  #   for method == "file", please specify column
+  #   for method != "file", please specify min, max, numberOfPoints
   paramsDict:
+    zero: &ZERO
+      method: zero
+      min: 0
+      max: 0
+      numberOfPoints: 1
     m1:
       method: file
       column: 1
@@ -43,16 +67,46 @@ general:
     alpha0:
       method: file
       column: 7
+    dchi0:
+      <<: *ZERO
     dchi1:
-      method: chebyshev
-      min: -10.0
-      max: 10.0
-      numberOfPoints: 10
+      method: file
+      column: 10
+    dchi2:
+      <<: *ZERO
+    dchi3:
+      <<: *ZERO
+    dchi4:
+      <<: *ZERO
+    dchi5l:
+      <<: *ZERO
+    dchi6:
+      <<: *ZERO
+    dchi6l:
+      <<: *ZERO
+    dchi7:
+      <<: *ZERO
+    dbeta2:
+      <<: *ZERO
+    dbeta3:
+      <<: *ZERO
+    dalpha2:
+      <<: *ZERO
+    dalpha3:
+      <<: *ZERO
+    dalpha4:
+      <<: *ZERO
+    dsigma2:
+      <<: *ZERO
+    dsigma3:
+      <<: *ZERO
+    dsigma4:
+      <<: *ZERO
 
 ###########################################################################################
 greedy:
   toleranceGreedy: 1e-12
-  maxRB: 3000
+  maxRB: 5000
 
 ###########################################################################################
 EIM:
@@ -60,17 +114,17 @@ EIM:
 ###########################################################################################
 validation:
   tolerance: 1e-8
-  numberOfPoints: 10000
+  numberOfPoints: 100
   Vinv_FilePath: /home/kwtsang/romhunter/ROMOutput/Vinv.npy
   Bkf_FilePath: /home/kwtsang/romhunter/ROMOutput/Bkf.npy
-  RBMatrix_FilePath: /home/kwtsang/romhunter/ROMOutput/orthonormalRB.txt
+  RBMatrix_FilePath: /home/kwtsang/romhunter/ROMOutput/orthonormalRB.npy
   EIMStdout_FilePath: /home/kwtsang/romhunter/ROMOutput/EIMStdout.txt
 
   randParamsRangeDict:
     kerrBound: 0.98
     Mc:
-      min: 12.3
-      max: 23.0
+      min: 3.4
+      max: 6.2
       method: uniform
     q:
       min: 1.0
@@ -78,11 +132,11 @@ validation:
       method: uniform
     m1:
       min: 1.0
-      max:
+      max: 1.0
       method: qMc
     m2:
       min: 1.0
-      max:
+      max: 1.0
       method: qMc
     chi1L:
       min: -0.9
@@ -104,7 +158,43 @@ validation:
       min: 0.0
       max: 6.28318531
       method: uniform
+    dchi0:
+      <<: *ZERO
     dchi1:
       min: -10.0
       max: 10.0
       method: uniform
+    dchi2:
+      <<: *ZERO
+    dchi3:
+      <<: *ZERO
+    dchi4:
+      <<: *ZERO
+    dchi5l:
+      <<: *ZERO
+    dchi6:
+      <<: *ZERO
+    dchi6l:
+      <<: *ZERO
+    dchi7:
+      <<: *ZERO
+    dbeta2:
+      <<: *ZERO
+    dbeta3:
+      <<: *ZERO
+    dalpha2:
+      <<: *ZERO
+    dalpha3:
+      <<: *ZERO
+    dalpha4:
+      <<: *ZERO
+    dsigma2:
+      <<: *ZERO
+    dsigma3:
+      <<: *ZERO
+    dsigma4:
+      <<: *ZERO
+    zero:
+      <<: *ZERO
+
+

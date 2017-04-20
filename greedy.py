@@ -63,7 +63,6 @@ def generateRB(
   # Choose an arbitrary seed choice, here the first vector in TS is chosen.
   RBMatrix = []
   RBMatrix.append(TSMatrix[seed].unitVector(weight))
-  gu.write(orthoNormalRBVec_FilePath, "w+", RBMatrix[-1].printComponent())
 
   # Initial info printing and saving
   gu.printAndWrite(greedyStdout_FilePath, "w+", "dimRB %i | TSIndex %i | GreedyError2 %E | timeSearch(s) %E | timeOrtho(s) %E | timeSweep(s) %E" % (dimRB, RB_index[-1], error_dimRB[-1], 0., 0., 0.), withTime = True)
@@ -95,9 +94,6 @@ def generateRB(
     timeOrtho = time.time()-timeOrtho_i
     RBMatrix.append(RBVec_add.unitVector(weight))
 
-    # Save the orthonormalized resultant basis vector
-    gu.write(orthoNormalRBVec_FilePath, "a", RBMatrix[-1].printComponent())
-
     # Print and Save all general information
     timeSweep = time.time() - timeSweep_i
     gu.printAndWrite(greedyStdout_FilePath, "a", "dimRB %i | TSIndex %i | GreedyError2 %E | timeSearch(s) %E | timeOrtho(s) %E | timeSweep(s) %E" % (dimRB, RB_index[-1], error_dimRB[-1], timeSearch, timeOrtho, timeSweep), withTime = True)
@@ -117,6 +113,12 @@ def generateRB(
       continueToWork = False
 
   # Final part
+    # Save the orthonormalized RB
+  RBMatrix_save = np.zeros([dimRB, RBMatrix[0].dim()], dtype="complex128")
+  for i in xrange(dimRB):
+    RBMatrix_save[i] = RBMatrix[i].component
+  np.save(orthoNormalRBVec_FilePath, RBMatrix_save)
+
   timeGreedy = time.time() - timeGreedy_i
   gu.printAndWrite(ROMStdout_FilePath, "a", "The greedy algorithm takes %E wall seconds to complete." % timeGreedy, withTime = True)
   

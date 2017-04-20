@@ -27,58 +27,46 @@ def buildingTrainingset(outputdir, filePath, columnSequence, paramsDict):
   paramsMatrix = []
   paramsMatrix_tmp = []
   
-  # Check whether you need to generate a new trainingset.
-  # If you dont need, you can just copy the filePath as your trainingset.
-  needToGenerateNewTS = False
-  for icolumn in columnSequence:
-    if paramsDict[icolumn]["method"] != "file":
-      needToGenerateNewTS = True
-      break
-
-  if needToGenerateNewTS:
-    # Generate the deterministic points from the range given
-    detParamsMatrix = []
-    for icolumnName in columnSequence:
-      if paramsDict[icolumnName]["method"] != "file":
-        if detParamsMatrix == []:
-          detParamsMatrix = num.numberhunter().getNumber(paramsDict[icolumnName]["min"], paramsDict[icolumnName]["max"], paramsDict[icolumnName]["numberOfPoints"], mode = "det")
-        else:
-          detParams_tmp = num.numberhunter().getNumber(paramsDict[icolumnName]["min"], paramsDict[icolumnName]["max"], paramsDict[icolumnName]["numberOfPoints"], mode = "det")
-          detParamsMatrix = df.formExhaustive2DArray(detParamsMatrix, detParams_tmp)
-
-    # Get the paramsMatrix_tmp, which is the extended-column version of the input file, like [ file row, others ]
-    # Here I assumed at least one method is "file", if not, it will waste time to extract the TS
-    fileParamsMatrix = df.datahunter(filePath).getMatrix(dataFormat = "float")
-    paramsMatrix_tmp = df.formExhaustive2DArray( [fileParamsMatrix, detParamsMatrix] )
-
-    # Store a dict indicating the index number in paramsMatrix_tmp
-    dictColIndex_paramsMatrix_tmp = {}
-    for icolumnName in columnSequence:
-      additionCount = 1
-      if paramsDict[icolumnName]["method"] == "file":
-        dictColIndex_paramsMatrix_tmp[icolumnName] = int(paramsDict[icolumnName]["column"])
+  # Generate the deterministic points from the range given
+  detParamsMatrix = []
+  for icolumnName in columnSequence:
+    if paramsDict[icolumnName]["method"] != "file":
+      if detParamsMatrix == []:
+        detParamsMatrix = num.numberhunter().getNumber(paramsDict[icolumnName]["min"], paramsDict[icolumnName]["max"], paramsDict[icolumnName]["numberOfPoints"], mode = "det")
       else:
-        dictColIndex_paramsMatrix_tmp[icolumnName] = len(fileParamsMatrix[0]) + additionCount
-        additionCount += 1
+        detParams_tmp = num.numberhunter().getNumber(paramsDict[icolumnName]["min"], paramsDict[icolumnName]["max"], paramsDict[icolumnName]["numberOfPoints"], mode = "det")
+        detParamsMatrix = df.formExhaustive2DArray([detParamsMatrix, detParams_tmp])
 
-    # Generate the final paramsMatrix, by deleting/exchanging columns
-    trainingsetFile = open("%s/trainingset.txt" % outputdir, "w+")
-    progressBar = gu.progressBar(len(paramsMatrix_tmp))
-    progressBar.start()
-    for i in xrange(len(paramsMatrix_tmp)):
-      progressBar.update(i)
-      paramsVec_tmp = []
-      paramsVec_tmp_string = ""
-      for icolumnName in columnSequence:
-        paramsVec_tmp.append(paramsMatrix_tmp[i][dictColIndex_paramsMatrix_tmp[icolumnName]-1])
-        paramsVec_tmp_string += str(paramsVec_tmp[-1]) + " "
-      paramsMatrix.append(paramsVec_tmp)
-      trainingsetFile.write(paramsVec_tmp_string[:-1] + "\n")
-    trainingsetFile.close()
-    progressBar.end()
-  else:
-    os.system("cp %s %s/trainingset.txt" % (filePath, outputdir))
-    paramsMatrix = df.datahunter(outputdir+"/trainingset.txt").getMatrix(dataFormat = "float")
+  # Get the paramsMatrix_tmp, which is the extended-column version of the input file, like [ file row, others ]
+  # Here I assumed at least one method is "file", if not, it will waste time to extract the TS
+  fileParamsMatrix = df.datahunter(filePath).getMatrix(dataFormat = "float")
+  paramsMatrix_tmp = df.formExhaustive2DArray( [fileParamsMatrix, detParamsMatrix] )
+
+  # Store a dict indicating the index number in paramsMatrix_tmp
+  dictColIndex_paramsMatrix_tmp = {}
+  for icolumnName in columnSequence:
+    additionCount = 1
+    if paramsDict[icolumnName]["method"] == "file":
+      dictColIndex_paramsMatrix_tmp[icolumnName] = int(paramsDict[icolumnName]["column"])
+    else:
+      dictColIndex_paramsMatrix_tmp[icolumnName] = len(fileParamsMatrix[0]) + additionCount
+      additionCount += 1
+
+  # Generate the final paramsMatrix, by deleting/exchanging columns
+  trainingsetFile = open("%s/trainingset.txt" % outputdir, "w+")
+  progressBar = gu.progressBar(len(paramsMatrix_tmp))
+  progressBar.start()
+  for i in xrange(len(paramsMatrix_tmp)):
+    progressBar.update(i)
+    paramsVec_tmp = []
+    paramsVec_tmp_string = ""
+    for icolumnName in columnSequence:
+      paramsVec_tmp.append(paramsMatrix_tmp[i][dictColIndex_paramsMatrix_tmp[icolumnName]-1])
+      paramsVec_tmp_string += str(paramsVec_tmp[-1]) + " "
+    paramsMatrix.append(paramsVec_tmp)
+    trainingsetFile.write(paramsVec_tmp_string[:-1] + "\n")
+  trainingsetFile.close()
+  progressBar.end()
   return paramsMatrix
 
 """

@@ -93,7 +93,7 @@ if __name__ == "__main__":
   maxRB           = int(config["greedy"]["maxRB"])
   toleranceGreedy = float(config["greedy"]["toleranceGreedy"])
 
-  orthoNormalRB_FilePath = outputdir + "/orthonormalRB.txt"
+  orthoNormalRB_FilePath = outputdir + "/orthonormalRB.npy"
   greedyStdout_FilePath  = outputdir + "/greedyStdout.txt"
 
     # "EIM"

@@ -29,41 +29,34 @@ import trainingset as ts
 #  Function
 #===============================================================================
 def generateRandomParamsMatrix(columnSequence, randParamsRangeDict, numberOfPoints):
+  myrand = num.numberhunter()
   randParamsMatrix = []
   progressBar = gu.progressBar(numberOfPoints)
   progressBar.start()
   for i in xrange(numberOfPoints):
     progressBar.update(i)
-    iTSParams_tmp = []
+    iTSParams_tmp = [0.]*len(columnSequence)
     for j in xrange(len(columnSequence)):
-      iTSParams_tmp.append( generateParams(columnSequence[j], randParamsRangeDict) )
+      # mass1 and mass2 may need to be determined together
+      if columnSequence[j] in ["m1", "m2"] and randParamsRangeDict[columnSequence[j]]["method"] == "qMc":
+        iTSParams_tmp[columnSequence.index("m1")] = -1
+        iTSParams_tmp[columnSequence.index("m2")] = -1
+        while iTSParams_tmp[columnSequence.index("m1")] < randParamsRangeDict["m1"]["min"] or iTSParams_tmp[columnSequence.index("m2")] < randParamsRangeDict["m2"]["min"]:
+          q_tmp  = myrand.getNumber(randParamsRangeDict["q"]["min"], randParamsRangeDict["q"]["max"], method = randParamsRangeDict["q"]["method"])
+          Mc_tmp = myrand.getNumber(randParamsRangeDict["Mc"]["min"], randParamsRangeDict["Mc"]["max"], method = randParamsRangeDict["Mc"]["method"])
+          m1m2   = mpc.Conv_q_Mc_to_m1m2(q_tmp, Mc_tmp)
+          iTSParams_tmp[columnSequence.index("m1")] = m1m2[0]
+          iTSParams_tmp[columnSequence.index("m2")] = m1m2[1]
+      else:
+        iTSParams_tmp[j] = myrand.getNumber(randParamsRangeDict[columnSequence[j]]["min"], randParamsRangeDict[columnSequence[j]]["max"], method = randParamsRangeDict[columnSequence[j]]["method"])
     # HARD CODE TO CHECK FOR KERR BOUND:
     while iTSParams_tmp[columnSequence.index("chi1L")]**2 + iTSParams_tmp[columnSequence.index("chi2L")]**2 < float(randParamsRangeDict["kerrBound"]):
-      iTSParams_tmp[columnSequence.index("chi1L")] = generateParams("chi1L", randParamsRangeDict)
-      iTSParams_tmp[columnSequence.index("chi2L")] = generateParams("chi2L", randParamsRangeDict)
+      iTSParams_tmp[columnSequence.index("chi1L")] = myrand.getNumber(randParamsRangeDict["chi1L"]["min"], randParamsRangeDict["chi1L"]["max"], method = randParamsRangeDict["chi1L"]["method"])
+      iTSParams_tmp[columnSequence.index("chi2L")] = myrand.getNumber(randParamsRangeDict["chi2L"]["min"], randParamsRangeDict["chi2L"]["max"], method = randParamsRangeDict["chi2L"]["method"])
     # END HARD CODE
     randParamsMatrix.append(iTSParams_tmp)
   progressBar.end()
   return randParamsMatrix
-
-def generateParams(variableName, randParamsRangeDict):
-  myrand = num.numberhunter()
-  if variableName == "m1" and randParamsRangeDict[variableName]["method"] == "qMc":
-    m1 = -1
-    while m1 < randParamsRangeDict["m1"]["min"]:
-      q_tmp  = myrand.getNumber(randParamsRangeDict["q"]["min"], randParamsRangeDict["q"]["max"], method = randParamsRangeDict["q"]["method"])
-      Mc_tmp = myrand.getNumber(randParamsRangeDict["Mc"]["min"], randParamsRangeDict["Mc"]["max"], method = randParamsRangeDict["Mc"]["method"])
-      m1 = mpc.Conv_q_Mc_to_m1m2(q_tmp, Mc_tmp)[0]
-    return m1
-  elif variableName == "m2" and randParamsRangeDict[variableName]["method"] == "qMc":
-    m2 = -1
-    while m2 < randParamsRangeDict["m2"]["min"]:
-      q_tmp  = myrand.getNumber(randParamsRangeDict["q"]["min"], randParamsRangeDict["q"]["max"], method = randParamsRangeDict["q"]["method"])
-      Mc_tmp = myrand.getNumber(randParamsRangeDict["Mc"]["min"], randParamsRangeDict["Mc"]["max"], method = randParamsRangeDict["Mc"]["method"])
-      m2 = mpc.Conv_q_Mc_to_m1m2(q_tmp, Mc_tmp)[1]
-    return m2
-  else:
-    return myrand.getNumber(randParamsRangeDict[variableName]["min"], randParamsRangeDict[variableName]["max"], method = randParamsRangeDict[variableName]["method"])
 
 def calculateGreedyError2(hVector, RBMatrix, weight):
   ProjNorm2 = 0.
@@ -105,6 +98,7 @@ def main():
   greedyError2 = []
   interpError2 = []
   isBadPoints  = []
+  randParams_badPoints = []
 
   timeValidation_i = time.time()
   gu.printAndWrite(generalStdout_FilePath, "a", "Starting validation ...", withTime = True)
@@ -123,6 +117,7 @@ def main():
     # Determine whether it is a bad point
     if greedyError2[-1] > toleranceValidation:
       isBadPoints.append(1)
+      randParams_badPoints.append(randParamsMatrix[randIndexm1])
     else:
       isBadPoints.append(0)
     # Print and Save all general information
@@ -138,6 +133,7 @@ def main():
   gu.printAndWrite(generalStdout_FilePath, "a", "There are %i bad points out of %i. (%.1f %s)" % (sum(isBadPoints), numberOfPoints, sum(isBadPoints)/float(numberOfPoints)*100., "%"), withTime = True)
   # Save the matrix with random-generated params, greedyError2 and interpError2
   np.savetxt(randParams_FilePath, randParamsMatrix)
+  np.savetxt(randParams_badPoints_FilePath, randParams_badPoints)
 
 #===============================================================================
 #  Footer
@@ -161,12 +157,13 @@ if __name__ == "__main__":
   columnSequence            = config["general"]["columnSequence"]
 
     # validation
-  toleranceValidation       = float(config["validation"]["tolerance"])
-  numberOfPoints            = int(config["validation"]["numberOfPoints"])
-  randParamsRangeDict       = config["validation"]["randParamsRangeDict"]
-  randParams_FilePath       = outputdir + "/randParams.txt"
-  validationStdout_FilePath = outputdir + "/validationStdout.txt"
-  generalStdout_FilePath    = outputdir + "/validationGeneralStdout.txt"
+  toleranceValidation           = float(config["validation"]["tolerance"])
+  numberOfPoints                = int(config["validation"]["numberOfPoints"])
+  randParamsRangeDict           = config["validation"]["randParamsRangeDict"]
+  randParams_FilePath           = outputdir + "/randParams.txt"
+  randParams_badPoints_FilePath = outputdir + "/randParams_badPoints.txt"
+  validationStdout_FilePath     = outputdir + "/validationStdout.txt"
+  generalStdout_FilePath        = outputdir + "/validationGeneralStdout.txt"
 
   EIMStdout_FilePath        = config["validation"]["EIMStdout_FilePath"]
   EIMNodes = df.datahunter(EIMStdout_FilePath).getColumn(6, dataFormat = "int")
@@ -180,11 +177,19 @@ if __name__ == "__main__":
 
     # Get RBMatrix
   gu.printAndWrite(generalStdout_FilePath, "a", "Getting reduced basis matrix from file ...", withTime = True)
-  RBMatrix = df.datahunter(RBMatrix_FilePath).getMatrix(dataFormat="complex", progressBar = True)
-  for i in xrange(len(RBMatrix)):
-    RBMatrix[i] = vec.vector1D(RBMatrix[i])
+  RBMatrix = []
+  RBMatrix_numpy = np.load(RBMatrix_FilePath)
+  for i in xrange(len(RBMatrix_numpy)):
+    RBMatrix.append(vec.vector1D(RBMatrix_numpy[i]))
+  del RBMatrix_numpy
 
   main()
+
+  # Get the enriched_trainingset.txt
+  if len(randParams_badPoints) != 0:
+    os.system("cat %s/trainingset.txt %s/randParams_badPoints.txt > %s/enriched_trainingset.txt" % (outputdir, outputdir, outputdir))
+  else:
+    os.system("cat %s/randParams_badPoints.txt > %s/enriched_trainingset.txt" % (outputdir, outputdir))
 
   # Final information
   timeValidationPipeline = time.time() - timeValidationPipeline_i
