@@ -22,6 +22,7 @@ import gwhunter.utils.massParamsConv as mpc
 import gwhunter.utils.vector as vec
 import gwhunter.utils.general as gu
 import gwhunter.utils.dataFile as df
+import gwhunter.waveform.lalutils as lalu
 
 import trainingset as ts
 
@@ -155,16 +156,27 @@ if __name__ == "__main__":
 
   # Reading the yaml file and calculate quantities
     # general
-  outputdir = config["general"]["outputdir"]
-  modelName = config["general"]["modelName"]
-  modelTag  = config["general"]["modelTag"]
-  fmin      = float(config["general"]["fmin"])
-  fmax      = float(config["general"]["fmax"])
-  seglen    = float(config["general"]["seglen"])
-  # TODO: allow weight to pass as vec.vector1D  (2017-02-08 02:59:53 CET)
-  weight   = 1./seglen
-  freqList = np.linspace(fmin,fmax,int((fmax-fmin)*seglen)+1)
-  columnSequence            = config["general"]["columnSequence"]
+  outputdir   = config["general"]["outputdir"]
+  modelName   = config["general"]["modelName"]
+  modelTag    = config["general"]["modelTag"]
+  fmin        = float(config["general"]["fmin"])
+  fmax        = float(config["general"]["fmax"])
+  seglen      = float(config["general"]["seglen"])
+  bands       = config["general"]["bands"]
+  fudgeFactor = config["general"]["fudge"]
+  McMin       = config["general"]["Mc-min"]
+  qMax        = config["general"]["q-max"]
+  if len(bands) == 0:
+    freqList  = np.linspace(fmin,fmax,int((fmax-fmin)*seglen)+1)
+    weight    = 1./seglen
+  else:
+    m1m2            = mpc.Conv_Mc_q_to_m1m2(McMin, qMax)
+    freq_weight_tmp = lalu.generateMultibandFreqVector(m1m2[0], m1m2[1], bands, fudge = fudgeFactor)
+    freqList        = freq_weight_tmp[0][:-1]
+    weight          = freq_weight_tmp[1]
+    del m1m2
+    del freq_weight_tmp
+  columnSequence    = config["general"]["columnSequence"]
 
     # validation
   toleranceValidation           = float(config["validation"]["tolerance"])
