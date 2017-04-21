@@ -34,10 +34,7 @@ def main():
   gu.printAndWrite(ROMStdout_FilePath, "w+", "Building the input trainingset file ...", withTime = True)
   TSParamsMatrix = ts.buildingTrainingset(outputdir, TSParams_FilePath, columnSequence, paramsDict)
   gu.printAndWrite(ROMStdout_FilePath, "a", "Evaluating trainingset ...", withTime = True)
-#  TSParams = df.datahunter(outputdir+"/trainingset.txt")
-#  TSParamsMatrix = TSParams.getMatrix(dataFormat = "float")
   TSMatrix = ts.evaluateModel(freqList, columnSequence, TSParamsMatrix, modelName, modelTag)
-  del TSParamsMatrix
   gu.printAndWrite(ROMStdout_FilePath, "a", "Trainingset is evaluated successfully!", withTime = True)
 
     #===============================#
@@ -47,6 +44,15 @@ def main():
   RBMatrix = greedy.generateRB(TSMatrix, weight, orthoNormalRB_FilePath, greedyStdout_FilePath, ROMStdout_FilePath, toleranceGreedy, maxRB)
   del TSMatrix
   gu.printAndWrite(ROMStdout_FilePath, "a", "Reduced basis is generated successfully!", withTime = True)
+
+  # Save the greedy points params
+  gu.printAndWrite(ROMStdout_FilePath, "a", "Saving the reduced basis ...", withTime = True)
+  RBIndex = df.datahunter(greedyStdout_FilePath).getColumn(6, dataFormat="int")
+  RBParams = []
+  for iRBIndex in RBIndex:
+    RBParams.append(TSParamsMatrix[iRBIndex])
+  np.savetxt(greedyPoints_FilePath, RBParams)
+  del RBIndex, RBParams, TSParamsMatrix
 
     #===============================#
     # eim 
@@ -69,7 +75,11 @@ def main():
 
 if __name__ == "__main__":
   timeROQ_i = time.time()
-  with open("config.yaml", "r") as f:
+  if len(sys.argv) != 2:
+    sys.exit("Please specify the config yaml file.")
+  if sys.argv[1][-4:] != "yaml":
+    sys.exit("The config file must be in yaml format.")
+  with open(sys.argv[1], "r") as f:
     config = yaml.load(f)
 
   # Reading the yaml file and calculate quantities
@@ -95,6 +105,7 @@ if __name__ == "__main__":
 
   orthoNormalRB_FilePath = outputdir + "/orthonormalRB.npy"
   greedyStdout_FilePath  = outputdir + "/greedyStdout.txt"
+  greedyPoints_FilePath  = outputdir + "/greedyPoints.txt"
 
     # "EIM"
   EIMStdout_FilePath = outputdir + "/EIMStdout.txt"
@@ -103,6 +114,7 @@ if __name__ == "__main__":
 
   # Create the output directory and Start the main ROQ program
   os.system("mkdir -p %s" % outputdir) 
+  os.system("cp %s %s/config.yaml" % (sys.argv[1], outputdir))
   main()
 
   # Final information

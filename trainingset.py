@@ -13,6 +13,7 @@ Description=""" To get the frequency vector at each point in phase space for dif
 #  Module
 #===============================================================================
 import sys
+import numpy as np
 import gwhunter.utils.general as gu
 from gwhunter.waveform.lalwaveform import IMRPhenomPv2FD
 import gwhunter.utils.vector as vec
@@ -44,16 +45,15 @@ def buildingTrainingset(outputdir, filePath, columnSequence, paramsDict):
 
   # Store a dict indicating the index number in paramsMatrix_tmp
   dictColIndex_paramsMatrix_tmp = {}
+  additionalCount = 1
   for icolumnName in columnSequence:
-    additionCount = 1
     if paramsDict[icolumnName]["method"] == "file":
       dictColIndex_paramsMatrix_tmp[icolumnName] = int(paramsDict[icolumnName]["column"])
     else:
-      dictColIndex_paramsMatrix_tmp[icolumnName] = len(fileParamsMatrix[0]) + additionCount
-      additionCount += 1
+      dictColIndex_paramsMatrix_tmp[icolumnName] = len(fileParamsMatrix[0]) + additionalCount
+      additionalCount += 1
 
   # Generate the final paramsMatrix, by deleting/exchanging columns
-  trainingsetFile = open("%s/trainingset.txt" % outputdir, "w+")
   progressBar = gu.progressBar(len(paramsMatrix_tmp))
   progressBar.start()
   for i in xrange(len(paramsMatrix_tmp)):
@@ -64,9 +64,8 @@ def buildingTrainingset(outputdir, filePath, columnSequence, paramsDict):
       paramsVec_tmp.append(paramsMatrix_tmp[i][dictColIndex_paramsMatrix_tmp[icolumnName]-1])
       paramsVec_tmp_string += str(paramsVec_tmp[-1]) + " "
     paramsMatrix.append(paramsVec_tmp)
-    trainingsetFile.write(paramsVec_tmp_string[:-1] + "\n")
-  trainingsetFile.close()
   progressBar.end()
+  np.savetxt("%s/trainingset.txt" % outputdir, paramsMatrix)
   return paramsMatrix
 
 """

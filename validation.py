@@ -12,7 +12,7 @@ Description=""" To generate random trainingset points and check whether it is ba
 #===============================================================================
 #  Module  
 #===============================================================================
-import os
+import os, sys
 import numpy as np
 import yaml
 import time
@@ -49,8 +49,8 @@ def generateRandomParamsMatrix(columnSequence, randParamsRangeDict, numberOfPoin
           iTSParams_tmp[columnSequence.index("m2")] = m1m2[1]
       else:
         iTSParams_tmp[j] = myrand.getNumber(randParamsRangeDict[columnSequence[j]]["min"], randParamsRangeDict[columnSequence[j]]["max"], method = randParamsRangeDict[columnSequence[j]]["method"])
-    # HARD CODE TO CHECK FOR KERR BOUND:
-    while iTSParams_tmp[columnSequence.index("chi1L")]**2 + iTSParams_tmp[columnSequence.index("chi2L")]**2 < float(randParamsRangeDict["kerrBound"]):
+    # HARD CODE TO CHECK FOR KERR BOUND AND chi1L BOUND:
+    while iTSParams_tmp[columnSequence.index("chi1L")]**2 + iTSParams_tmp[columnSequence.index("chi2L")]**2 > float(randParamsRangeDict["kerrBound"]) or iTSParams_tmp[columnSequence.index("chi1L")] <= 0.4 - 7.*mpc.Conv_m1m2_to_eta(iTSParams_tmp[columnSequence.index("m1")], iTSParams_tmp[columnSequence.index("m2")]):
       iTSParams_tmp[columnSequence.index("chi1L")] = myrand.getNumber(randParamsRangeDict["chi1L"]["min"], randParamsRangeDict["chi1L"]["max"], method = randParamsRangeDict["chi1L"]["method"])
       iTSParams_tmp[columnSequence.index("chi2L")] = myrand.getNumber(randParamsRangeDict["chi2L"]["min"], randParamsRangeDict["chi2L"]["max"], method = randParamsRangeDict["chi2L"]["method"])
     # END HARD CODE
@@ -117,7 +117,7 @@ def main():
     # Determine whether it is a bad point
     if greedyError2[-1] > toleranceValidation:
       isBadPoints.append(1)
-      randParams_badPoints.append(randParamsMatrix[randIndexm1])
+      randParams_badPoints.append(randParamsMatrix[randIndexm1][:-2])
     else:
       isBadPoints.append(0)
     # Print and Save all general information
@@ -135,12 +135,22 @@ def main():
   np.savetxt(randParams_FilePath, randParamsMatrix)
   np.savetxt(randParams_badPoints_FilePath, randParams_badPoints)
 
+  # Get the enriched_trainingset.txt
+  if len(randParams_badPoints) != 0:
+    os.system("cat %s/greedyPoints.txt %s/randParams_badPoints.txt > %s/enriched_trainingset.txt" % (outputdir, outputdir, outputdir))
+  else:
+    os.system("echo "" > %s/enriched_trainingset.txt" % (outputdir))
+
 #===============================================================================
 #  Footer
 #===============================================================================
 if __name__ == "__main__":
   timeValidationPipeline_i = time.time()
-  with open("config.yaml", "r") as f:
+  if len(sys.argv) != 2:
+    sys.exit("Please specify the config yaml file.")
+  if sys.argv[1][-4:] != "yaml":
+    sys.exit("The config file must be in yaml format.")
+  with open(sys.argv[1], "r") as f:
     config = yaml.load(f)
 
   # Reading the yaml file and calculate quantities
@@ -184,12 +194,6 @@ if __name__ == "__main__":
   del RBMatrix_numpy
 
   main()
-
-  # Get the enriched_trainingset.txt
-  if len(randParams_badPoints) != 0:
-    os.system("cat %s/trainingset.txt %s/randParams_badPoints.txt > %s/enriched_trainingset.txt" % (outputdir, outputdir, outputdir))
-  else:
-    os.system("cat %s/randParams_badPoints.txt > %s/enriched_trainingset.txt" % (outputdir, outputdir))
 
   # Final information
   timeValidationPipeline = time.time() - timeValidationPipeline_i
