@@ -97,13 +97,11 @@ if __name__ == "__main__":
   bands             = config["general"]["bands"]
   fudgeFactor       = config["general"]["fudge"]
   McMin             = config["general"]["Mc-min"]
-  qMax              = config["general"]["q-max"]
   if len(bands) == 0:
     freqList        = np.linspace(fmin,fmax,int((fmax-fmin)*seglen)+1)
     weight          = 1./seglen
   else:
-    m1m2            = mpc.Conv_Mc_q_to_m1m2(McMin, qMax)
-    freq_weight_tmp = lalu.generateMultibandFreqVector(m1m2[0], m1m2[1], bands, fudge = fudgeFactor)
+    freq_weight_tmp = lalu.generateMultibandFreqVector(McMin, bands, fudge = fudgeFactor)
     freqList        = freq_weight_tmp[0][:-1]
     weight          = freq_weight_tmp[1]
     del m1m2
