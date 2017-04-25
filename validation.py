@@ -76,68 +76,98 @@ def calculateInterpError2(hVector, EIMNodes, BkfMatrix, weight):
 #  Main
 #===============================================================================
 def main():
-  timeGenerateRandomParams_i = time.time()
-  gu.printAndWrite(generalStdout_FilePath, "a", "Generating random parameters matrix ...", withTime = True)
-  randParamsMatrix = generateRandomParamsMatrix(columnSequence, randParamsRangeDict, numberOfPoints)
-  timeGenerateRandomParams = time.time() - timeGenerateRandomParams_i
-  gu.printAndWrite(generalStdout_FilePath, "a", "Random parameters matrix is generated succefully in %E seconds!" % timeGenerateRandomParams, withTime = True)
-
-  timeEvaluateWaveform_i = time.time()
-  gu.printAndWrite(generalStdout_FilePath, "a", "Evaluating the waveform ...", withTime = True)
-  randVecMatrix = ts.evaluateModel(freqList, columnSequence, randParamsMatrix, modelName, modelTag)
-  timeEvaluateWaveform = time.time() - timeEvaluateWaveform_i
-  gu.printAndWrite(generalStdout_FilePath, "a", "Evaluation of waveform is finished successfully in %E seconds!" % timeEvaluateWaveform, withTime = True)
-
-  timeNormalization_i = time.time()
-  gu.printAndWrite(generalStdout_FilePath, "a", "Normalizing the waveform ...", withTime = True)
-  for i in xrange(len(randVecMatrix)):
-    randVecMatrix[i] = randVecMatrix[i].unitVector(weight)
-  timeNormalization = time.time() - timeNormalization_i
-  gu.printAndWrite(generalStdout_FilePath, "a", "Normalization of waveform is finished successfully in %E seconds!" % timeNormalization, withTime = True)
-
   # Initialize variables
   greedyError2 = []
   interpError2 = []
   isBadPoints  = []
-  randParams_badPoints = []
+  randParams_badPoints_firstWrite = True
+  randIndex_total = 0
 
-  timeValidation_i = time.time()
-  gu.printAndWrite(generalStdout_FilePath, "a", "Starting validation ...", withTime = True)
-  progressBar = gu.progressBar(len(randVecMatrix))
-  progressBar.start()
-  for randIndexm1 in xrange(len(randVecMatrix)):
-    progressBar.update(randIndexm1)
-    timeSweep_i = time.time()
-
-    greedyError2.append(calculateGreedyError2(randVecMatrix[randIndexm1], RBMatrix, weight))
-    randParamsMatrix[randIndexm1].append(greedyError2[-1])
-
-    interpError2.append(calculateInterpError2(randVecMatrix[randIndexm1], EIMNodes, BkfMatrix, weight))
-    randParamsMatrix[randIndexm1].append(interpError2[-1])
-
-    # Determine whether it is a bad point
-    if greedyError2[-1] > toleranceValidation:
-      isBadPoints.append(1)
-      randParams_badPoints.append(randParamsMatrix[randIndexm1][:-2])
-    else:
-      isBadPoints.append(0)
-    # Print and Save all general information
-    timeSweep = time.time() - timeSweep_i
-    if randIndexm1 == 0:
-      gu.printAndWrite(validationStdout_FilePath, "w+", "randIndex %i | GreedyError2 %E | InterpError2 % E | isBad %i | timeSweep(s) %E" % (randIndexm1+1, greedyError2[-1], interpError2[-1], isBadPoints[-1],timeSweep), withTime = True)
-    else:
-      gu.printAndWrite(validationStdout_FilePath, "a", "randIndex %i | GreedyError2 %E | InterpError2 % E | isBad %i | timeSweep(s) %E" % (randIndexm1+1, greedyError2[-1], interpError2[-1], isBadPoints[-1],timeSweep), withTime = True)
-  progressBar.end()
+  # Divide the numberOfPoints into interval (say 5000) for lowering the memory burden
+  division = 1000
+  numberOfPointsInterval = [int(numberOfPoints)]
+  while numberOfPointsInterval[-1] > division:
+    remainingPoints = numberOfPointsInterval[-1] - division
+    numberOfPointsInterval = numberOfPointsInterval[:-1] 
+    numberOfPointsInterval.append(division)
+    numberOfPointsInterval.append(remainingPoints)
   
+  for iinterval in xrange(len(numberOfPointsInterval)):
+    randParams_badPoints = []
+    # Generating random params
+    timeGenerateRandomParams_i = time.time()
+    gu.printAndWrite(generalStdout_FilePath, "a", "Generating random parameters matrix (%i/%i) ..." % (iinterval+1, len(numberOfPointsInterval)), withTime = True)
+    randParamsMatrix = generateRandomParamsMatrix(columnSequence, randParamsRangeDict, numberOfPointsInterval[iinterval])
+    timeGenerateRandomParams = time.time() - timeGenerateRandomParams_i
+    gu.printAndWrite(generalStdout_FilePath, "a", "Random parameters matrix (%i/%i) is generated successfully in %E seconds!" % (iinterval+1, len(numberOfPointsInterval), timeGenerateRandomParams), withTime = True)
+
+    # Evaluating the waveform
+    timeEvaluateWaveform_i = time.time()
+    gu.printAndWrite(generalStdout_FilePath, "a", "Evaluating the waveform (%i/%i) ..." % (iinterval+1, len(numberOfPointsInterval)), withTime = True)
+    randVecMatrix = ts.evaluateModel(freqList, columnSequence, randParamsMatrix, modelName, modelTag)
+    timeEvaluateWaveform = time.time() - timeEvaluateWaveform_i
+    gu.printAndWrite(generalStdout_FilePath, "a", "Evaluation of waveform (%i/%i) is finished successfully in %E seconds!" % (iinterval+1, len(numberOfPointsInterval), timeEvaluateWaveform), withTime = True)
+
+    # Normalizing the waveform
+    timeNormalization_i = time.time()
+    gu.printAndWrite(generalStdout_FilePath, "a", "Normalizing the waveform (%i/%i) ..." % (iinterval+1, len(numberOfPointsInterval)), withTime = True)
+    progressBar = gu.progressBar(numberOfPointsInterval[iinterval])
+    progressBar.start()
+    for i in xrange(numberOfPointsInterval[iinterval]):
+      progressBar.update(i)
+      randVecMatrix[i] = randVecMatrix[i].unitVector(weight)
+    progressBar.end()
+    timeNormalization = time.time() - timeNormalization_i
+    gu.printAndWrite(generalStdout_FilePath, "a", "Normalization of waveform (%i/%i) is finished successfully in %E seconds!" % (iinterval+1, len(numberOfPointsInterval), timeNormalization), withTime = True)
+
+    # validation start
+    timeValidation_i = time.time()
+    gu.printAndWrite(generalStdout_FilePath, "a", "Starting validation (%i/%i) ..." % (iinterval+1, len(numberOfPointsInterval)), withTime = True)
+    progressBar = gu.progressBar(numberOfPointsInterval[iinterval])
+    progressBar.start()
+    for randIndexm1 in xrange(numberOfPointsInterval[iinterval]):
+      randIndex_total += 1
+      progressBar.update(randIndexm1)
+      timeSweep_i = time.time()
+
+      greedyError2.append(calculateGreedyError2(randVecMatrix[randIndexm1], RBMatrix, weight))
+      randParamsMatrix[randIndexm1].append(greedyError2[-1])
+
+      interpError2.append(calculateInterpError2(randVecMatrix[randIndexm1], EIMNodes, BkfMatrix, weight))
+      randParamsMatrix[randIndexm1].append(interpError2[-1])
+
+      # Determine whether it is a bad point
+      if greedyError2[-1] > toleranceValidation:
+        isBadPoints.append(1)
+        randParams_badPoints.append(randParamsMatrix[randIndexm1][:-2])
+      else:
+        isBadPoints.append(0)
+
+      # Print and Save all general information, Save the matrix with random-generated params, greedyError2 and interpError2
+      timeSweep = time.time() - timeSweep_i
+      if randIndex_total == 0:
+        gu.writeArray(randParams_FilePath, "w+", randParamsMatrix[-1])
+        gu.printAndWrite(validationStdout_FilePath, "w+", "(%i/%i) totalIndex %i | randIndex %i | GreedyError2 %E | InterpError2 % E | isBad %i | timeSweep(s) %E" % (iinterval+1, len(numberOfPointsInterval), randIndex_total, randIndexm1+1, greedyError2[-1], interpError2[-1], isBadPoints[-1], timeSweep), withTime = True)
+      else:
+        gu.writeArray(randParams_FilePath, "a", randParamsMatrix[-1])
+        gu.printAndWrite(validationStdout_FilePath, "a", "(%i/%i) totalIndex %i | randIndex %i | GreedyError2 %E | InterpError2 % E | isBad %i | timeSweep(s) %E" % (iinterval+1, len(numberOfPointsInterval), randIndex_total, randIndexm1+1, greedyError2[-1], interpError2[-1], isBadPoints[-1], timeSweep), withTime = True)
+    progressBar.end()
+
+    # Save the bad points params
+    for irandParams_badPoints in randParams_badPoints:
+      if randParams_badPoints_firstWrite:
+        gu.writeArray(randParams_badPoints_FilePath, "w+", irandParams_badPoints)
+        randParams_badPoints_firstWrite = False
+      else:
+        gu.writeArray(randParams_badPoints_FilePath, "a", irandParams_badPoints)
+  
+  # validation end
   timeValidation = time.time() - timeValidation_i
   gu.printAndWrite(generalStdout_FilePath, "a", "The validation is finished successfully in %E seconds!" % timeValidation, withTime = True)
   gu.printAndWrite(generalStdout_FilePath, "a", "There are %i bad points out of %i. (%.1f %s)" % (sum(isBadPoints), numberOfPoints, sum(isBadPoints)/float(numberOfPoints)*100., "%"), withTime = True)
-  # Save the matrix with random-generated params, greedyError2 and interpError2
-  np.savetxt(randParams_FilePath, randParamsMatrix)
-  np.savetxt(randParams_badPoints_FilePath, randParams_badPoints)
 
   # Get the enriched_trainingset.txt
-  if len(randParams_badPoints) != 0:
+  if sum(isBadPoints) != 0:
     os.system("cat %s/greedyPoints.txt %s/randParams_badPoints.txt > %s/enriched_trainingset.txt" % (outputdir, outputdir, outputdir))
   else:
     os.system("echo "" > %s/enriched_trainingset.txt" % (outputdir))
@@ -172,7 +202,6 @@ if __name__ == "__main__":
     freq_weight_tmp = lalu.generateMultibandFreqVector(McMin, bands, fudge = fudgeFactor)
     freqList        = freq_weight_tmp[0][:-1]
     weight          = freq_weight_tmp[1]
-    del m1m2
     del freq_weight_tmp
   columnSequence    = config["general"]["columnSequence"]
 

@@ -104,7 +104,6 @@ if __name__ == "__main__":
     freq_weight_tmp = lalu.generateMultibandFreqVector(McMin, bands, fudge = fudgeFactor)
     freqList        = freq_weight_tmp[0][:-1]
     weight          = freq_weight_tmp[1]
-    del m1m2
     del freq_weight_tmp
   columnSequence    = config["general"]["columnSequence"]
   paramsDict        = config["general"]["paramsDict"]
