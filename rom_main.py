@@ -105,6 +105,8 @@ if __name__ == "__main__":
     freqList        = freq_weight_tmp[0][:-1]
     weight          = freq_weight_tmp[1]
     del freq_weight_tmp
+  np.savetxt(outputdir + "/freq_nodes.txt", freqList)
+  np.savetxt(outputdir + "/freq_weights.txt", freq_weight_tmp)
   columnSequence    = config["general"]["columnSequence"]
   paramsDict        = config["general"]["paramsDict"]
 
