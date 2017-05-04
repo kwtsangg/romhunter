@@ -1,0 +1,117 @@
+numberOfPoints: 20000
+outputFilePath: /home/kwtsang/romhunter/script/randomParamsTrainingset.txt
+
+# a sequence indicating the corresponding variable name in the final trainingset file
+columnSequence:
+  - m1
+  - m2
+  - chi1L
+  - chi2L
+  - chip
+  - thetaJ
+  - alpha0
+  - zero
+  - dchi0
+  - dchi1
+  - dchi2
+  - dchi3
+  - dchi4
+  - dchi5l
+  - dchi6
+  - dchi6l
+  - dchi7
+  - dalpha2
+  - dalpha3
+  - dalpha4
+  - dbeta2
+  - dbeta3
+  - dsigma2
+  - dsigma3
+  - dsigma4
+
+randParamsRangeDict:
+  kerrBound: 0.98
+  zero: &ZERO
+    min: 0.0
+    max: 0.0
+    method: zero
+  Mc:
+    min: 1.4
+    max: 2.6
+    method: chebyshev
+  q:
+    min: 1.0
+    max: 9.0
+    method: chebyshev
+  m1:
+    min: 1.0
+    max: 1.0
+    method: qMc
+  m2:
+    min: 1.0
+    max: 1.0
+    method: qMc
+  chi1L:
+    min: -0.9
+    max: 0.9
+    method: uniform
+  chi2L:
+    min: -0.9
+    max: 0.9
+    method: uniform
+  chip:
+    min: 0.0
+    max: 0.9
+    method: uniform
+  thetaJ:
+    min: 0.0
+    max: 3.14159265
+    method: uniform
+  alpha0:
+    min: 0.0
+    max: 6.28318531
+    method: uniform
+  dchi0:
+   #<<: *ZERO
+    min: -2.0
+    max: 2.0
+    method: chebyshev
+  dchi1:
+    <<: *ZERO
+  dchi2:
+    <<: *ZERO
+  dchi3:
+    <<: *ZERO
+  dchi4:
+    <<: *ZERO
+  dchi5l:
+    <<: *ZERO
+  dchi6:
+    <<: *ZERO
+  dchi6l:
+    <<: *ZERO
+  dchi7:
+    <<: *ZERO
+  dbeta2:
+    <<: *ZERO
+  dbeta3:
+    <<: *ZERO
+  dalpha2:
+    <<: *ZERO
+  dalpha3:
+    <<: *ZERO
+  dalpha4:
+    <<: *ZERO
+    #min: -10.0
+    #max: 10.0
+    #method: chebyshev
+  dsigma2:
+    <<: *ZERO
+  dsigma3:
+    <<: *ZERO
+  dsigma4:
+    <<: *ZERO
+  zero:
+    <<: *ZERO
+
+
