@@ -124,6 +124,7 @@ EIM:
 validation:
   tolerance: 1e-8
   numberOfPoints: 20000
+  numberOfPointsDivision: 1000
   Vinv_FilePath:      /home/kwtsang/romhunter/ROMOutput/Vinv.npy
   Bkf_FilePath:       /home/kwtsang/romhunter/ROMOutput/Bkf.npy
   RBMatrix_FilePath:  /home/kwtsang/romhunter/ROMOutput/orthonormalRB.npy

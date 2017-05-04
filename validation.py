@@ -84,12 +84,11 @@ def main():
   randIndex_total = 0
 
   # Divide the numberOfPoints into interval (say 5000) for lowering the memory burden
-  division = 1000
   numberOfPointsInterval = [int(numberOfPoints)]
-  while numberOfPointsInterval[-1] > division:
-    remainingPoints = numberOfPointsInterval[-1] - division
+  while numberOfPointsInterval[-1] > numberOfPointsDivision:
+    remainingPoints = numberOfPointsInterval[-1] - numberOfPointsDivision
     numberOfPointsInterval = numberOfPointsInterval[:-1] 
-    numberOfPointsInterval.append(division)
+    numberOfPointsInterval.append(numberOfPointsDivision)
     numberOfPointsInterval.append(remainingPoints)
   
   for iinterval in xrange(len(numberOfPointsInterval)):
@@ -208,6 +207,7 @@ if __name__ == "__main__":
     # validation
   toleranceValidation           = float(config["validation"]["tolerance"])
   numberOfPoints                = int(config["validation"]["numberOfPoints"])
+  numberOfPointsDivision        = int(config["validation"]["numberOfPointsDivision"])
   randParamsRangeDict           = config["validation"]["randParamsRangeDict"]
   randParams_FilePath           = outputdir + "/randParams.txt"
   randParams_badPoints_FilePath = outputdir + "/randParams_badPoints.txt"
