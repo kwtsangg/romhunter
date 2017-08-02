@@ -1,0 +1,70 @@
+##########################################################################################
+general:
+  TSParams_FilePath: /home/kwtsang/romhunter/AmpFactor_PointMassLens/enriched_trainingset.txt
+  modelName: AmpFactor_PointMassLens
+  modelTag:  bypass
+  outputdir: /home/kwtsang/romhunter/AmpFactor_PointMassLens
+  # These will be used to calculate the frequency vector by either uniform sampling with sampling points (fmax-fmin)*seglen+1 or multibanding.
+  # To use uniform sampling, please specify "bands:[]", fmin, fmax and seglen.
+  # To use multibanding, please specify bands, fudge and Mc-min.
+  fmin: 10
+  fmax: 1024
+  seglen: 8
+
+  # a sequence indicating the corresponding variable name in the final trainingset file
+  columnSequence:
+    - M_Lz
+    - y
+
+  # origin of params, can be from TSParams_FilePath or random number.
+  # available method are "file", "uniform". "chebyshev", "zero".
+  #   for method == "file", please specify column
+  #   for method != "file", please specify min, max, numberOfPoints
+  paramsDict:
+    zero: &ZERO
+      method: zero
+      min: 0
+      max: 0
+      numberOfPoints: 1
+    M_Lz:
+     #      method: uniform
+     #      min: 1e2
+     #      max: 1e4
+     #      numberOfPoints: 5
+      method: file
+      column: 1
+    y:
+     #      method: uniform
+     #      min: 0
+     #      max: 5
+     #      numberOfPoints: 5
+      method: file
+      column: 2
+
+###########################################################################################
+greedy:
+  toleranceGreedy: 1e-12
+  maxRB: 1000
+
+###########################################################################################
+EIM:
+
+###########################################################################################
+validation:
+  tolerance: 1e-8
+  numberOfPoints: 100
+  numberOfPointsDivision: 1000
+  Vinv_FilePath:      /home/kwtsang/romhunter/AmpFactor_PointMassLens/Vinv.npy
+  Bkf_FilePath:       /home/kwtsang/romhunter/AmpFactor_PointMassLens/Bkf.npy
+  RBMatrix_FilePath:  /home/kwtsang/romhunter/AmpFactor_PointMassLens/orthonormalRB.npy
+  EIMStdout_FilePath: /home/kwtsang/romhunter/AmpFactor_PointMassLens/EIMStdout.txt
+
+  randParamsRangeDict:
+    M_Lz:
+      min: 1e2
+      max: 1e4
+      method: uniform
+    y:
+      min: 0
+      max: 5
+      method: uniform

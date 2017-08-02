@@ -22,14 +22,13 @@ import gwhunter.utils.massParamsConv as mpc
 import gwhunter.utils.vector as vec
 import gwhunter.utils.general as gu
 import gwhunter.utils.dataFile as df
-import gwhunter.waveform.lalutils as lalu
 
 import trainingset as ts
 
 #===============================================================================
 #  Function
 #===============================================================================
-def generateRandomParamsMatrix(columnSequence, randParamsRangeDict, numberOfPoints):
+def generateRandomParamsMatrix(columnSequence, randParamsRangeDict, modelName, numberOfPoints):
   myrand = num.numberhunter()
   randParamsMatrix = []
   progressBar = gu.progressBar(numberOfPoints)
@@ -37,24 +36,29 @@ def generateRandomParamsMatrix(columnSequence, randParamsRangeDict, numberOfPoin
   for i in xrange(numberOfPoints):
     progressBar.update(i)
     iTSParams_tmp = [0.]*len(columnSequence)
-    for j in xrange(len(columnSequence)):
-      # mass1 and mass2 may need to be determined together
-      if columnSequence[j] in ["m1", "m2"] and randParamsRangeDict[columnSequence[j]]["method"] == "qMc":
-        iTSParams_tmp[columnSequence.index("m1")] = -1
-        iTSParams_tmp[columnSequence.index("m2")] = -1
-        while iTSParams_tmp[columnSequence.index("m1")] < randParamsRangeDict["m1"]["min"] or iTSParams_tmp[columnSequence.index("m2")] < randParamsRangeDict["m2"]["min"]:
-          q_tmp  = myrand.getNumber(randParamsRangeDict["q"]["min"], randParamsRangeDict["q"]["max"], method = randParamsRangeDict["q"]["method"])
-          Mc_tmp = myrand.getNumber(randParamsRangeDict["Mc"]["min"], randParamsRangeDict["Mc"]["max"], method = randParamsRangeDict["Mc"]["method"])
-          m1m2   = mpc.Conv_q_Mc_to_m1m2(q_tmp, Mc_tmp)
-          iTSParams_tmp[columnSequence.index("m1")] = m1m2[0]
-          iTSParams_tmp[columnSequence.index("m2")] = m1m2[1]
-      else:
+    if modelName == "IMRPhenomPv2":
+      for j in xrange(len(columnSequence)):
+        # mass1 and mass2 may need to be determined together
+        if columnSequence[j] in ["m1", "m2"] and randParamsRangeDict[columnSequence[j]]["method"] == "qMc":
+          iTSParams_tmp[columnSequence.index("m1")] = -1
+          iTSParams_tmp[columnSequence.index("m2")] = -1
+          while iTSParams_tmp[columnSequence.index("m1")] < randParamsRangeDict["m1"]["min"] or iTSParams_tmp[columnSequence.index("m2")] < randParamsRangeDict["m2"]["min"]:
+            q_tmp  = myrand.getNumber(randParamsRangeDict["q"]["min"], randParamsRangeDict["q"]["max"], method = randParamsRangeDict["q"]["method"])
+            Mc_tmp = myrand.getNumber(randParamsRangeDict["Mc"]["min"], randParamsRangeDict["Mc"]["max"], method = randParamsRangeDict["Mc"]["method"])
+            m1m2   = mpc.Conv_q_Mc_to_m1m2(q_tmp, Mc_tmp)
+            iTSParams_tmp[columnSequence.index("m1")] = m1m2[0]
+            iTSParams_tmp[columnSequence.index("m2")] = m1m2[1]
+        else:
+          iTSParams_tmp[j] = myrand.getNumber(randParamsRangeDict[columnSequence[j]]["min"], randParamsRangeDict[columnSequence[j]]["max"], method = randParamsRangeDict[columnSequence[j]]["method"])
+      # HARD CODE TO CHECK FOR KERR BOUND AND chi1L BOUND:
+      while iTSParams_tmp[columnSequence.index("chi1L")]**2 + iTSParams_tmp[columnSequence.index("chip")]**2 > float(randParamsRangeDict["kerrBound"]) or iTSParams_tmp[columnSequence.index("chi1L")] <= 0.4 - 7.*mpc.Conv_m1m2_to_eta(iTSParams_tmp[columnSequence.index("m1")], iTSParams_tmp[columnSequence.index("m2")]):
+        iTSParams_tmp[columnSequence.index("chi1L")] = myrand.getNumber(randParamsRangeDict["chi1L"]["min"], randParamsRangeDict["chi1L"]["max"], method = randParamsRangeDict["chi1L"]["method"])
+        iTSParams_tmp[columnSequence.index("chi2L")] = myrand.getNumber(randParamsRangeDict["chi2L"]["min"], randParamsRangeDict["chi2L"]["max"], method = randParamsRangeDict["chi2L"]["method"])
+      # END HARD CODE
+    else:
+      for j in xrange(len(columnSequence)):
         iTSParams_tmp[j] = myrand.getNumber(randParamsRangeDict[columnSequence[j]]["min"], randParamsRangeDict[columnSequence[j]]["max"], method = randParamsRangeDict[columnSequence[j]]["method"])
-    # HARD CODE TO CHECK FOR KERR BOUND AND chi1L BOUND:
-    while iTSParams_tmp[columnSequence.index("chi1L")]**2 + iTSParams_tmp[columnSequence.index("chip")]**2 > float(randParamsRangeDict["kerrBound"]) or iTSParams_tmp[columnSequence.index("chi1L")] <= 0.4 - 7.*mpc.Conv_m1m2_to_eta(iTSParams_tmp[columnSequence.index("m1")], iTSParams_tmp[columnSequence.index("m2")]):
-      iTSParams_tmp[columnSequence.index("chi1L")] = myrand.getNumber(randParamsRangeDict["chi1L"]["min"], randParamsRangeDict["chi1L"]["max"], method = randParamsRangeDict["chi1L"]["method"])
-      iTSParams_tmp[columnSequence.index("chi2L")] = myrand.getNumber(randParamsRangeDict["chi2L"]["min"], randParamsRangeDict["chi2L"]["max"], method = randParamsRangeDict["chi2L"]["method"])
-    # END HARD CODE
+
     randParamsMatrix.append(iTSParams_tmp)
   progressBar.end()
   return randParamsMatrix
@@ -96,7 +100,7 @@ def main():
     # Generating random params
     timeGenerateRandomParams_i = time.time()
     gu.printAndWrite(generalStdout_FilePath, "a", "Generating random parameters matrix (%i/%i) ..." % (iinterval+1, len(numberOfPointsInterval)), withTime = True)
-    randParamsMatrix = generateRandomParamsMatrix(columnSequence, randParamsRangeDict, numberOfPointsInterval[iinterval])
+    randParamsMatrix = generateRandomParamsMatrix(columnSequence, randParamsRangeDict, modelName, numberOfPointsInterval[iinterval])
     timeGenerateRandomParams = time.time() - timeGenerateRandomParams_i
     gu.printAndWrite(generalStdout_FilePath, "a", "Random parameters matrix (%i/%i) is generated successfully in %E seconds!" % (iinterval+1, len(numberOfPointsInterval), timeGenerateRandomParams), withTime = True)
 
@@ -144,11 +148,11 @@ def main():
 
       # Print and Save all general information, Save the matrix with random-generated params, greedyError2 and interpError2
       timeSweep = time.time() - timeSweep_i
-      if randIndex_total == 0:
-        gu.writeArray(randParams_FilePath, "w+", randParamsMatrix[-1])
+      if randIndex_total == 1:
+        gu.writeArray(randParams_FilePath, "w+", randParamsMatrix[randIndexm1])
         gu.printAndWrite(validationStdout_FilePath, "w+", "(%i/%i) totalIndex %i | randIndex %i | GreedyError2 %E | InterpError2 % E | isBad %i | timeSweep(s) %E" % (iinterval+1, len(numberOfPointsInterval), randIndex_total, randIndexm1+1, greedyError2[-1], interpError2[-1], isBadPoints[-1], timeSweep), withTime = True)
       else:
-        gu.writeArray(randParams_FilePath, "a", randParamsMatrix[-1])
+        gu.writeArray(randParams_FilePath, "a", randParamsMatrix[randIndexm1])
         gu.printAndWrite(validationStdout_FilePath, "a", "(%i/%i) totalIndex %i | randIndex %i | GreedyError2 %E | InterpError2 % E | isBad %i | timeSweep(s) %E" % (iinterval+1, len(numberOfPointsInterval), randIndex_total, randIndexm1+1, greedyError2[-1], interpError2[-1], isBadPoints[-1], timeSweep), withTime = True)
     progressBar.end()
 
@@ -191,17 +195,22 @@ if __name__ == "__main__":
   fmin        = float(config["general"]["fmin"])
   fmax        = float(config["general"]["fmax"])
   seglen      = float(config["general"]["seglen"])
-  bands       = config["general"]["bands"]
-  fudgeFactor = config["general"]["fudge"]
-  McMin       = config["general"]["Mc-min"]
-  if len(bands) == 0:
-    freqList  = np.linspace(fmin,fmax,int((fmax-fmin)*seglen)+1)
-    weight    = 1./seglen
-  else:
+  ### model-specific ###
+  # IMRPhenomPv2 Multibanding
+  if modelName == "IMRPhenomPv2":
+    bands             = config["general"]["bands"]
+    fudgeFactor       = config["general"]["fudge"]
+    McMin             = config["general"]["Mc-min"]
+    import gwhunter.waveform.lalutils as lalu
     freq_weight_tmp = lalu.generateMultibandFreqVector(McMin, bands, fudge = fudgeFactor)
     freqList        = freq_weight_tmp[0][:-1]
-    weight          = freq_weight_tmp[1]
+    weight          = freq_weight_tmp[1][:-1]
     del freq_weight_tmp
+    np.savetxt(outputdir + "/freq_weights.txt", weight)
+  ######################
+  else:
+    freqList        = np.linspace(fmin,fmax,int((fmax-fmin)*seglen)+1)
+    weight          = 1./seglen
   columnSequence    = config["general"]["columnSequence"]
 
     # validation

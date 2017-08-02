@@ -20,7 +20,6 @@ import gwhunter.utils.vector as vec
 import gwhunter.utils.dataFile as df
 import gwhunter.utils.general as gu
 import gwhunter.utils.massParamsConv as mpc
-import gwhunter.waveform.lalutils as lalu
 
 import greedy
 import trainingset as ts
@@ -88,24 +87,28 @@ if __name__ == "__main__":
     # "general"
   outputdir          = config["general"]["outputdir"]
   ROMStdout_FilePath = outputdir + "/ROMStdout.txt"
-  TSParams_FilePath = config["general"]["TSParams_FilePath"]
-  modelName         = config["general"]["modelName"]
-  modelTag          = config["general"]["modelTag"]
-  fmin              = float(config["general"]["fmin"])
-  fmax              = float(config["general"]["fmax"])
-  seglen            = float(config["general"]["seglen"])
-  bands             = config["general"]["bands"]
-  fudgeFactor       = config["general"]["fudge"]
-  McMin             = config["general"]["Mc-min"]
-  if len(bands) == 0:
-    freqList        = np.linspace(fmin,fmax,int((fmax-fmin)*seglen)+1)
-    weight          = 1./seglen
-  else:
+  TSParams_FilePath  = config["general"]["TSParams_FilePath"]
+  modelName          = config["general"]["modelName"]
+  modelTag           = config["general"]["modelTag"]
+  fmin               = float(config["general"]["fmin"])
+  fmax               = float(config["general"]["fmax"])
+  seglen             = float(config["general"]["seglen"])
+  ### model-specific ###
+  # IMRPhenomPv2 Multibanding
+  if modelName == "IMRPhenomPv2":
+    bands           = config["general"]["bands"]
+    fudgeFactor     = config["general"]["fudge"]
+    McMin           = config["general"]["Mc-min"]
+    import gwhunter.waveform.lalutils as lalu
     freq_weight_tmp = lalu.generateMultibandFreqVector(McMin, bands, fudge = fudgeFactor)
     freqList        = freq_weight_tmp[0][:-1]
-    weight          = freq_weight_tmp[1]
+    weight          = freq_weight_tmp[1][:-1]
     del freq_weight_tmp
     np.savetxt(outputdir + "/freq_weights.txt", weight)
+  ######################
+  else:
+    freqList        = np.linspace(fmin,fmax,int((fmax-fmin)*seglen)+1)
+    weight          = 1./seglen
   np.savetxt(outputdir + "/freq_nodes.txt", freqList)
   columnSequence    = config["general"]["columnSequence"]
   paramsDict        = config["general"]["paramsDict"]

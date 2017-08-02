@@ -15,10 +15,11 @@ Description=""" To get the frequency vector at each point in phase space for dif
 import sys
 import numpy as np
 import gwhunter.utils.general as gu
-from gwhunter.waveform.lalwaveform import IMRPhenomPv2FD
 import gwhunter.utils.vector as vec
 import gwhunter.utils.number as num
 import gwhunter.utils.dataFile as df
+
+import model
 
 #===============================================================================
 #  Main
@@ -30,6 +31,7 @@ def buildingTrainingset(outputdir, filePath, columnSequence, paramsDict):
   
   # Generate the deterministic points from the range given
   detParamsMatrix = []
+  atLeastOneMethodFile = False
   for icolumnName in columnSequence:
     if paramsDict[icolumnName]["method"] != "file":
       if detParamsMatrix == []:
@@ -37,10 +39,14 @@ def buildingTrainingset(outputdir, filePath, columnSequence, paramsDict):
       else:
         detParams_tmp = num.numberhunter().getNumber(paramsDict[icolumnName]["min"], paramsDict[icolumnName]["max"], paramsDict[icolumnName]["numberOfPoints"], mode = "det")
         detParamsMatrix = df.formExhaustive2DArray([detParamsMatrix, detParams_tmp])
+    else:
+      atLeastOneMethodFile = True
 
   # Get the paramsMatrix_tmp, which is the extended-column version of the input file, like [ file row, others ]
-  # Here I assumed at least one method is "file", if not, it will waste time to extract the TS
-  fileParamsMatrix = df.datahunter(filePath).getMatrix(dataFormat = "float")
+  if atLeastOneMethodFile:
+    fileParamsMatrix = df.datahunter(filePath).getMatrix(dataFormat = "float")
+  else:
+    fileParamsMatrix = [[]]
   paramsMatrix_tmp = df.formExhaustive2DArray( [fileParamsMatrix, detParamsMatrix] )
 
   # Store a dict indicating the index number in paramsMatrix_tmp
@@ -83,6 +89,7 @@ def evaluateModel(freqList, columnSequence, paramsMatrix, modelName, modelTag):
   progressBar = gu.progressBar(len(paramsMatrix))
   progressBar.start()
   if modelName == "IMRPhenomPv2FD":
+    from gwhunter.waveform.lalwaveform import IMRPhenomPv2FD
     assert len(columnSequence) >= 7
     nonGRparams = ["dchi0", "dchi1", "dchi2", "dchi3", "dchi4", "dchi5l", "dchi6", "dchi6l", "dchi7",
             "dbeta2", "dbeta3", "dalpha2", "dalpha3", "dalpha4",
@@ -106,19 +113,29 @@ def evaluateModel(freqList, columnSequence, paramsMatrix, modelName, modelTag):
               nonGRdict = nonGRdict_input)
       # Evaluate modelTag
       vecMatrix.append(evaluateModelTag(iVecList, modelTag))
+  if modelName == "AmpFactor_PointMassLens":
+    assert len(columnSequence) >= 2
+    for i in xrange(len(paramsMatrix)):
+      progressBar.update(i)
+      # Evaluate the function vector
+      iVecList = model.AmpFactor_PointMassLens(freqList,
+              M_Lz = paramsMatrix[i][columnSequence.index("M_Lz")],
+              y    = paramsMatrix[i][columnSequence.index("y")])
+      vecMatrix.append(evaluateModelTag(iVecList, "bypass"))
   else:
     raise ValueError("The model (%s) is not supported")
   progressBar.end()
   return vecMatrix
 
 """
+  This function is built specific for IMRPhenomPv2. For other model, use modelTag = "bypass"
   Input:
     iVecList  : The list with component [0] to be hplus vector list and component [1] to be hcross vector list
     modelTag  : item in [ "hp", "hc", "hphp", "hphc", "hchc", "hchc", "hpPlushcSquared" ]
   Output:
     a vec.vector1D object (defined in vectorUtils.py) with tag considered.
 """
-def evaluateModelTag(iVecList, modelTag):
+def evaluateModelTag(iVecList, modelTag = "bypass"):
   # hp
   if modelTag == "hp":
     iVechp = vec.vector1D(iVecList[0])
@@ -151,6 +168,9 @@ def evaluateModelTag(iVecList, modelTag):
     iVechc = vec.vector1D(iVecList[1])
     iVechpPLUShc = iVechp + iVechc
     return iVechpPLUShc*(iVechpPLUShc.conj())
+  # bypass
+  elif modelTag == "bypass":
+    return vec.vector1D(iVecList)
   else:
     raise ValueError("The modelTag (%s) is not supported." % modelTag)
 
