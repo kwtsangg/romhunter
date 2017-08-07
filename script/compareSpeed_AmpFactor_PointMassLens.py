@@ -25,40 +25,59 @@ import gwhunter.utils.dataFile as df
 
 def AmpFactor_PointMassLens_ROM(freqList, M_Lz, y):
   Bkf         = np.load("/home/kwtsang/romhunter/AmpFactor_PointMassLens/Bkf.npy")
+#  Bkf         = np.load("/home/kwtsang/MountCluster/nikhef_home/romhunter/AmpFactor_PointMassLens/Bkf.npy")
   EIMNodeList = df.datahunter("/home/kwtsang/romhunter/AmpFactor_PointMassLens/EIMStdout.txt").getColumn(9, dataFormat="float")
-  hVector_k = np.array([ model.AmpFactor_PointMassLens(EIMNodeList, M_Lz, y) ])
+#  EIMNodeList = df.datahunter("/home/kwtsang/MountCluster/nikhef_home/romhunter/AmpFactor_PointMassLens/EIMStdout.txt").getColumn(9, dataFormat="float")
+  hVector_k = np.array( model.AmpFactor_PointMassLens(EIMNodeList, M_Lz, y, False) )
   Ih = np.dot(Bkf.T, hVector_k)
 
   nodeList = df.datahunter("/home/kwtsang/romhunter/AmpFactor_PointMassLens/freq_nodes.txt").getColumn(1, dataFormat="float")
+#  nodeList = df.datahunter("/home/kwtsang/MountCluster/nikhef_home/romhunter/AmpFactor_PointMassLens/freq_nodes.txt").getColumn(1, dataFormat="float")
 
   result = []
+  Msun_time = 4.92567e-6
+  xm   = (y + np.sqrt(y*y + 4.))/2.
+  phim = (xm - y)*(xm - y)/2. - np.log(xm)
+
   for ifreq in freqList:
-    result.append( Ih[nodeList.index("ifreq")] )
-  return np.array([result])
+    w  = 8.*np.pi*M_Lz*ifreq*Msun_time
+    result.append( np.exp(np.pi*w/4. + 1j*w/2.*(np.log(w/2.)-2.*phim)) * Ih[nodeList.index(ifreq)] )
+#    result.append( Ih[nodeList.index(ifreq)] )
+  return np.array(result)
 
 def AmpFactor_PointMassLens_direct(freqList, M_Lz, y):
-  return np.array([model.AmpFactor_PointMassLens(freqList, M_Lz, y)])
+  return np.array( model.AmpFactor_PointMassLens(freqList, M_Lz, y, withExpPrefactor = True) )
+#  return np.array( model.AmpFactor_PointMassLens(freqList, M_Lz, y, withExpPrefactor = False) )
 
 def main():
-  freqList = [50.]
-  M_Lz = 1e2
-  y    = 3
+#  freqList = np.arange(20,1024,0.125)
+  freqList = [512.]
+  M_Lz = 1234
+  y    = 2.88
 
+  print "Calculating ROM ..."
   ROM_start_time = time.time()
-  AmpFactor_PointMassLens_ROM(freqList, M_Lz, y)
+  AmpFactor_PointMassLens_ROM_evaluated = AmpFactor_PointMassLens_ROM(freqList, M_Lz, y)
   ROM_end_time = time.time()
 
+  print "Calculating direct ..."
   Direct_start_time = time.time()
-  AmpFactor_PointMassLens_direct(freqList, M_Lz, y)
+  AmpFactor_PointMassLens_direct_evaluated = AmpFactor_PointMassLens_direct(freqList, M_Lz, y)
   Direct_end_time = time.time()
   
-  print "Time for ROM    calculation takes: %e" % (ROM_start_time - ROM_end_time)
-  print "Time for direct calculation takes: %e" % (Direct_start_time - Direct_end_time)
-  print "AmpFactor_PointMassLens_ROM is" , AmpFactor_PointMassLens_ROM
-  print "AmpFactor_PointMassLens_direct is", AmpFactor_PointMassLens_direct
-  print "ROM - Direct is", (AmpFactor_PointMassLens_ROM - AmpFactor_PointMassLens_direct)
+  print "no. of freq. nodes is            : %s" % len(freqList)
+  print "Theoretical time ratio is        : %f" % (len(freqList)/94.)
+  print "Time for ROM    calculation takes: %e" % (ROM_end_time - ROM_start_time)
+  print "Time for direct calculation takes: %e" % (Direct_end_time - Direct_start_time)
+  print "Empirical time elapsed ratio     : %f" % ((Direct_end_time - Direct_start_time)/(ROM_end_time - ROM_start_time))
+  print "AmpFactor_PointMassLens_ROM is" , AmpFactor_PointMassLens_ROM_evaluated
+  print "AmpFactor_PointMassLens_direct is", AmpFactor_PointMassLens_direct_evaluated
+  print "ROM - Direct is", (AmpFactor_PointMassLens_ROM_evaluated - AmpFactor_PointMassLens_direct_evaluated)
+  print "max(ROM - Direct) is", np.max((AmpFactor_PointMassLens_ROM_evaluated - AmpFactor_PointMassLens_direct_evaluated))
+  print "|ROM - Direct| is", np.linalg.norm((AmpFactor_PointMassLens_ROM_evaluated - AmpFactor_PointMassLens_direct_evaluated))
 
-
+if __name__ == "__main__":
+  main()
 
 
 
