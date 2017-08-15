@@ -113,7 +113,7 @@ def evaluateModel(freqList, columnSequence, paramsMatrix, modelName, modelTag):
               nonGRdict = nonGRdict_input)
       # Evaluate modelTag
       vecMatrix.append(evaluateModelTag(iVecList, modelTag))
-  if modelName == "AmpFactor_PointMassLens":
+  elif modelName == "AmpFactor_PointMassLens":
     assert len(columnSequence) >= 2
     for i in xrange(len(paramsMatrix)):
       progressBar.update(i)
@@ -173,4 +173,23 @@ def evaluateModelTag(iVecList, modelTag = "bypass"):
     return vec.vector1D(iVecList)
   else:
     raise ValueError("The modelTag (%s) is not supported." % modelTag)
+
+#===============================================================================
+#  other
+#===============================================================================
+
+def getGrammianMatrix(TSMatrix, weight, outputdir):
+  for i in xrange(len(TSMatrix)):
+    TSMatrix[i] = TSMatrix[i].unitVector(weight)
+  grammianMatrix = []
+  progressBar = gu.progressBar(len(TSMatrix))
+  progressBar.start()
+  for i in xrange(len(TSMatrix)):
+    progressBar.update(i)
+    grammianMatrix_tmp = []
+    for jTSMatrix in TSMatrix:
+      grammianMatrix_tmp.append(TSMatrix[i].innerProduct(jTSMatrix, weight))
+    grammianMatrix.append(grammianMatrix_tmp)
+  progressBar.end()
+  np.save("%s/grammianMatrix.npy" % outputdir, grammianMatrix)
 
