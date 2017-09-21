@@ -36,7 +36,7 @@ def generateRandomParamsMatrix(columnSequence, randParamsRangeDict, modelName, n
   for i in xrange(numberOfPoints):
     progressBar.update(i)
     iTSParams_tmp = [0.]*len(columnSequence)
-    if modelName == "IMRPhenomPv2":
+    if modelName == "IMRPhenomPv2FD":
       for j in xrange(len(columnSequence)):
         # mass1 and mass2 may need to be determined together
         if columnSequence[j] in ["m1", "m2"] and randParamsRangeDict[columnSequence[j]]["method"] == "qMc":
