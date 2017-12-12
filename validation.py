@@ -46,14 +46,14 @@ def generateRandomParamsMatrix(columnSequence, randParamsRangeDict, modelName, n
             q_tmp  = myrand.getNumber(randParamsRangeDict["q"]["min"], randParamsRangeDict["q"]["max"], method = randParamsRangeDict["q"]["method"])
             Mc_tmp = myrand.getNumber(randParamsRangeDict["Mc"]["min"], randParamsRangeDict["Mc"]["max"], method = randParamsRangeDict["Mc"]["method"])
             m1m2   = mpc.Conv_q_Mc_to_m1m2(q_tmp, Mc_tmp)
-            iTSParams_tmp[columnSequence.index("m1")] = m1m2[0]
-            iTSParams_tmp[columnSequence.index("m2")] = m1m2[1]
+            iTSParams_tmp[columnSequence.index("m1")] = m1m2[1]
+            iTSParams_tmp[columnSequence.index("m2")] = m1m2[0]
         else:
           iTSParams_tmp[j] = myrand.getNumber(randParamsRangeDict[columnSequence[j]]["min"], randParamsRangeDict[columnSequence[j]]["max"], method = randParamsRangeDict[columnSequence[j]]["method"])
       # HARD CODE TO CHECK FOR KERR BOUND AND chi1L BOUND:
       while iTSParams_tmp[columnSequence.index("chi1L")]**2 + iTSParams_tmp[columnSequence.index("chip")]**2 > float(randParamsRangeDict["kerrBound"]) or iTSParams_tmp[columnSequence.index("chi1L")] <= 0.4 - 7.*mpc.Conv_m1m2_to_eta(iTSParams_tmp[columnSequence.index("m1")], iTSParams_tmp[columnSequence.index("m2")]):
         iTSParams_tmp[columnSequence.index("chi1L")] = myrand.getNumber(randParamsRangeDict["chi1L"]["min"], randParamsRangeDict["chi1L"]["max"], method = randParamsRangeDict["chi1L"]["method"])
-        iTSParams_tmp[columnSequence.index("chi2L")] = myrand.getNumber(randParamsRangeDict["chi2L"]["min"], randParamsRangeDict["chi2L"]["max"], method = randParamsRangeDict["chi2L"]["method"])
+        iTSParams_tmp[columnSequence.index("chip")]  = myrand.getNumber(randParamsRangeDict["chip"]["min"],  randParamsRangeDict["chip"]["max"],  method = randParamsRangeDict["chip"]["method"])
       # END HARD CODE
     else:
       for j in xrange(len(columnSequence)):
